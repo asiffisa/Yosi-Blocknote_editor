@@ -10,8 +10,12 @@ export function BlockNoteEditor() {
     const editor = useCreateBlockNote({
         initialContent: [
             {
+                type: "heading",
+                content: "Block note editor",
+            },
+            {
                 type: "paragraph",
-                content: "Welcome to Yosi! Type '/' for commands...",
+                content: "Hello world",
             },
         ],
     });
@@ -20,6 +24,7 @@ export function BlockNoteEditor() {
         <BlockNoteView
             editor={editor}
             theme="light"
+            style={{ minHeight: '350px' }}
         />
     );
 }

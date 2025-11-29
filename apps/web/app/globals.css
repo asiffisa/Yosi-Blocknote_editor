@@ -5,3 +5,8 @@
 /* BlockNote Editor Styles */
 @import "@blocknote/core/fonts/inter.css";
 @import "@blocknote/mantine/style.css";
+
+/* BlockNote Editor minimum height */
+.bn-editor {
+    min-height: 400px !important;
+}

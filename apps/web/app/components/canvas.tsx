@@ -4,16 +4,37 @@ import { BlockNoteEditor } from "@yosi/ui";
 
 export function Canvas() {
     return (
-        <div className="relative h-full w-full bg-gray-100 flex items-center justify-center">
-            {/* Centered BlockNote Editor - 800x600 */}
+        <div
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 9999,
+                backgroundImage: 'url("/yosi background.webp")',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+            }}
+        >
             <div
-                className="bg-white rounded-lg shadow-lg overflow-hidden"
+                className="bg-white rounded-3xl shadow-2xl overflow-hidden"
                 style={{
-                    width: '800px',
-                    height: '600px'
+                    width: '900px',
+                    minHeight: '400px',
+                    maxWidth: '90vw',
+                    maxHeight: '85vh',
+                    display: 'flex',
+                    flexDirection: 'column'
                 }}
             >
-                <BlockNoteEditor />
+                <div style={{ flex: 1, overflowY: 'auto', padding: '2rem', minHeight: '400px' }}>
+                    <BlockNoteEditor />
+                </div>
             </div>
         </div>
     );
