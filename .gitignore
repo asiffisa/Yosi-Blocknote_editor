@@ -1,0 +1,9 @@
+node_modules
+.turbo
+.next
+.plasmo
+build
+dist
+.env
+.env.local
+.DS_Store

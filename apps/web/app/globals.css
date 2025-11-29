@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* BlockNote Editor Styles */
+@import "@blocknote/core/fonts/inter.css";
+@import "@blocknote/mantine/style.css";
