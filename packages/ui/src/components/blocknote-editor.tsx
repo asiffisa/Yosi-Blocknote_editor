@@ -8,12 +8,14 @@ import "@blocknote/core/fonts/inter.css";
 
 export interface BlockNoteEditorProps {
     theme?: "light" | "dark";
+    className?: string;
+    style?: React.CSSProperties;
 }
 
 // @ts-ignore
 import { en } from "./blocknote-dictionary";
 
-export function BlockNoteEditor({ theme = "dark" }: BlockNoteEditorProps) {
+export function BlockNoteEditor({ theme = "dark", className, style }: BlockNoteEditorProps) {
     // Create the BlockNote editor instance
     const editor = useCreateBlockNote({
         dictionary: {
@@ -30,7 +32,8 @@ export function BlockNoteEditor({ theme = "dark" }: BlockNoteEditorProps) {
         <BlockNoteView
             editor={editor}
             theme={theme}
-            style={{ minHeight: '360px' }}
+            className={className}
+            style={style}
         />
     );
 }

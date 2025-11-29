@@ -61,9 +61,15 @@ export function Canvas() {
             }}>
                 <div style={{
                     width: '100%',
-                    minHeight: '400px'
                 }}>
-                    <BlockNoteEditor theme={theme} />
+                    <BlockNoteEditor
+                        theme={theme}
+                        style={{
+                            maxHeight: '80vh',
+                            overflowY: 'auto',
+                            minHeight: '200px'
+                        }}
+                    />
                 </div>
             </div>
         </div>
