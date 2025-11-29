@@ -1,10 +1,20 @@
 "use client";
 
 import { BlockNoteEditor } from "@yosi/ui";
+import { useState } from "react";
+import { Button } from "@/app/components/ui/button";
+import { Sun, Moon } from "lucide-react";
 
 export function Canvas() {
+    const [theme, setTheme] = useState<"light" | "dark">("dark");
+
+    const toggleTheme = () => {
+        setTheme(theme === "light" ? "dark" : "light");
+    };
+
     return (
         <div
+            className={theme === "dark" ? "dark" : ""}
             style={{
                 position: 'fixed',
                 top: 0,
@@ -15,25 +25,45 @@ export function Canvas() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 zIndex: 9999,
-                backgroundImage: 'url("/yosi background.webp")',
+                backgroundImage: theme === "dark"
+                    ? 'url("/Yosi_BG_dark.webp")'
+                    : 'url("/Yosi_BG_light.webp")',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
+                backgroundRepeat: 'no-repeat',
+                transition: 'background-image 0.3s ease'
             }}
         >
-            <div
-                className="bg-white rounded-3xl shadow-2xl overflow-hidden"
-                style={{
-                    width: '900px',
-                    minHeight: '400px',
-                    maxWidth: '90vw',
-                    maxHeight: '85vh',
-                    display: 'flex',
-                    flexDirection: 'column'
-                }}
-            >
-                <div style={{ flex: 1, overflowY: 'auto', padding: '2rem', minHeight: '400px' }}>
-                    <BlockNoteEditor />
+            {/* Theme Toggle Button */}
+            <div style={{ position: 'fixed', top: '2rem', right: '2rem', zIndex: 10000 }}>
+                <Button
+                    onClick={toggleTheme}
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
+                >
+                    {theme === "dark" ? (
+                        <Sun className="h-4 w-4 text-white" />
+                    ) : (
+                        <Moon className="h-4 w-4 text-black" />
+                    )}
+                </Button>
+            </div>
+
+
+            {/* Centered Editor Container */}
+            <div style={{
+                width: '100%',
+                maxWidth: '800px',
+                padding: '2rem',
+                margin: '0 auto',
+                boxSizing: 'border-box'
+            }}>
+                <div style={{
+                    width: '100%',
+                    minHeight: '400px'
+                }}>
+                    <BlockNoteEditor theme={theme} />
                 </div>
             </div>
         </div>

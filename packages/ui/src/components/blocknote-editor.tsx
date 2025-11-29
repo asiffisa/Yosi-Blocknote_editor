@@ -5,26 +5,32 @@ import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import "@blocknote/core/fonts/inter.css";
 
-export function BlockNoteEditor() {
+
+export interface BlockNoteEditorProps {
+    theme?: "light" | "dark";
+}
+
+// @ts-ignore
+import { en } from "./blocknote-dictionary";
+
+export function BlockNoteEditor({ theme = "dark" }: BlockNoteEditorProps) {
     // Create the BlockNote editor instance
     const editor = useCreateBlockNote({
-        initialContent: [
-            {
-                type: "heading",
-                content: "Block note editor",
+        dictionary: {
+            ...en,
+            placeholders: {
+                ...en.placeholders,
+                default: "Write, / for commands",
             },
-            {
-                type: "paragraph",
-                content: "Hello world",
-            },
-        ],
+        } as any,
+        initialContent: undefined,
     });
 
     return (
         <BlockNoteView
             editor={editor}
-            theme="light"
-            style={{ minHeight: '350px' }}
+            theme={theme}
+            style={{ minHeight: '360px' }}
         />
     );
 }
