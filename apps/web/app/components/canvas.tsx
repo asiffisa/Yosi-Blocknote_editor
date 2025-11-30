@@ -14,24 +14,11 @@ export function Canvas() {
 
     return (
         <div
-            className={theme === "dark" ? "dark" : ""}
+            className={`fixed inset-0 flex items-center justify-center bg-cover bg-center bg-no-repeat transition-all duration-300 ${theme === "dark" ? "dark" : ""}`}
             style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 9999,
                 backgroundImage: theme === "dark"
                     ? 'url("/Yosi_BG_dark.webp")'
                     : 'url("/Yosi_BG_light.webp")',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                transition: 'background-image 0.3s ease'
             }}
         >
             {/* Theme Toggle Button */}
@@ -40,7 +27,7 @@ export function Canvas() {
                     onClick={toggleTheme}
                     variant="outline"
                     size="icon"
-                    className="rounded-full"
+                    className="rounded-full transition-all hover:scale-110"
                 >
                     {theme === "dark" ? (
                         <Sun className="h-4 w-4 text-white" />
@@ -50,20 +37,12 @@ export function Canvas() {
                 </Button>
             </div>
 
-
             {/* Centered Editor Container */}
-            <div style={{
-                width: '100%',
-                maxWidth: '800px',
-                padding: '2rem',
-                margin: '0 auto',
-                boxSizing: 'border-box'
-            }}>
-                <div style={{
-                    width: '100%',
-                }}>
+            <div className="mx-auto w-full max-w-3xl p-8">
+                <div className="w-full">
                     <BlockNoteEditor
                         theme={theme}
+                        className="transition-opacity duration-200"
                         style={{
                             maxHeight: '80vh',
                             overflowY: 'auto',
@@ -75,3 +54,4 @@ export function Canvas() {
         </div>
     );
 }
+
