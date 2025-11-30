@@ -1,12 +1,13 @@
 "use client";
 
-import { BlockNoteEditor } from "@yosi/ui";
+import { BlockNoteEditor, ApiKeySettings } from "@yosi/ui";
 import { useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Settings } from "lucide-react";
 
 export function Canvas() {
     const [theme, setTheme] = useState<"light" | "dark">("dark");
+    const [showSettings, setShowSettings] = useState(false);
 
     const toggleTheme = () => {
         setTheme(theme === "light" ? "dark" : "light");
@@ -22,7 +23,15 @@ export function Canvas() {
             }}
         >
             {/* Theme Toggle Button */}
-            <div style={{ position: 'fixed', top: '2rem', right: '2rem', zIndex: 10000 }}>
+            <div className="fixed right-8 top-8 z-50 flex gap-2">
+                <Button
+                    onClick={() => setShowSettings(true)}
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full transition-all hover:scale-110"
+                >
+                    <Settings className="h-4 w-4 text-black dark:text-white" />
+                </Button>
                 <Button
                     onClick={toggleTheme}
                     variant="outline"
@@ -51,6 +60,11 @@ export function Canvas() {
                     />
                 </div>
             </div>
+
+            {/* Settings Panel */}
+            {showSettings && (
+                <ApiKeySettings onClose={() => setShowSettings(false)} />
+            )}
         </div>
     );
 }

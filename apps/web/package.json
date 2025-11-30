@@ -9,12 +9,15 @@
         "lint": "next lint"
     },
     "dependencies": {
+        "@ai-sdk/anthropic": "^2.0.50",
+        "@ai-sdk/google": "^2.0.44",
+        "@ai-sdk/openai": "^2.0.74",
         "@blocknote/core": "0.42.3",
         "@blocknote/mantine": "0.42.3",
         "@radix-ui/react-slot": "^1.0.2",
         "@supabase/supabase-js": "^2.39.7",
         "@yosi/ui": "workspace:*",
-        "ai": "^2.2.37",
+        "ai": "^5.0.104",
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.1.0",
         "lucide-react": "^0.330.0",
