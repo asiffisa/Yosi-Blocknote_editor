@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Canvas } from "./canvas";
+import { EditorErrorBoundary, LoadingScreen } from "@yosi/ui";
 
 export function MainLayout() {
     const [isMounted, setIsMounted] = React.useState(false);
@@ -11,12 +12,15 @@ export function MainLayout() {
     }, []);
 
     if (!isMounted) {
-        return null;
+        return <LoadingScreen />;
     }
 
     return (
-        <div className="h-screen w-full">
-            <Canvas />
-        </div>
+        <EditorErrorBoundary>
+            <div className="h-screen w-full">
+                <Canvas />
+            </div>
+        </EditorErrorBoundary>
     );
 }
+
