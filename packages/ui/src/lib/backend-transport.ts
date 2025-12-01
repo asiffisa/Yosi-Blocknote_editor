@@ -60,40 +60,124 @@ export class BackendTransport implements ChatTransport<any> {
 
         // The backend returns toUIMessageStreamResponse() which is an HTTP Response
         // with a stream encoded in a specific format. We need to decode it into UIMessageChunk objects.
-        console.log("✅ Manually parsing UI message stream");
+        console.log("✅ Creating pull-based ReadableStream for BlockNote");
 
-        return new ReadableStream<UIMessageChunk>({
-            async start(controller) {
-                const reader = response.body!.getReader();
-                const decoder = new TextDecoder();
-                let buffer = "";
+        // Queue to hold parsed chunks until pull() is called
+        const chunkQueue: UIMessageChunk[] = [];
+        let isStreamFinished = false;
+        let streamError: Error | null = null;
+        let pullResolver: (() => void) | null = null;
 
-                try {
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
+        // Type guard to help TypeScript
+        const notifyPull = () => {
+            if (pullResolver) {
+                const resolver = pullResolver;
+                pullResolver = null;
+                resolver();
+            }
+        };
 
-                        buffer += decoder.decode(value, { stream: true });
-                        const lines = buffer.split("\n");
-                        buffer = lines.pop() || "";
+        // Start background task to read from HTTP response and parse chunks
+        const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
 
-                        for (const line of lines) {
-                            if (!line.trim()) continue;
+        // Background task to consume HTTP response and fill the queue
+        (async () => {
+            try {
+                console.log("🔄 Background task: Starting to read HTTP response stream");
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) {
+                        console.log("✅ Background task: HTTP stream finished");
+                        break;
+                    }
 
-                            // Handle Vercel AI SDK Data Stream Protocol
-                            // Format: "0:{string}" (text), "1:{json}" (tool call), etc.
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop() || "";
 
-                            console.log("🔹 Raw line:", line);
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
 
-                            if (line.trim() === 'data: [DONE]') {
-                                console.log("✅ Stream finished (legacy marker)");
+                        // Handle Vercel AI SDK Data Stream Protocol
+                        // Format: "0:{string}" (text), "1:{json}" (tool call), etc.
+                        // Also handles SSE format: "data: {json}"
+
+                        console.log("🔹 Background task: Raw line:", line);
+
+                        if (line.trim() === 'data: [DONE]') {
+                            console.log("✅ Background task: Stream finished (legacy marker)");
+                            continue;
+                        }
+
+                        let chunk: UIMessageChunk | null = null;
+
+                        // Check for SSE format first (data: prefix)
+                        if (line.startsWith('data: ')) {
+                            const jsonStr = line.slice(6).trim();
+                            if (jsonStr === '[DONE]') {
+                                console.log("✅ Background task: Stream finished (SSE marker)");
                                 continue;
                             }
+                            try {
+                                let parsedChunk: any;
+                                try {
+                                    parsedChunk = JSON.parse(jsonStr);
+                                } catch (parseError) {
+                                    console.error("❌ Background task: Failed to parse JSON from SSE line:", jsonStr, parseError);
+                                    continue;
+                                }
 
+                                // Log the parsed chunk for debugging
+                                if (!parsedChunk || typeof parsedChunk !== 'object') {
+                                    console.warn("⚠️ Background task: Parsed chunk is not an object:", parsedChunk, "from line:", line);
+                                    continue;
+                                }
+
+                                // Check if chunk is already in UIMessageChunk format or needs conversion
+                                if (parsedChunk.type) {
+                                    // Handle error chunks specially
+                                    if (parsedChunk.type === 'error') {
+                                        const errorText = parsedChunk.errorText || parsedChunk.message || parsedChunk.error || "Stream error";
+                                        console.error("❌ Background task: Stream error chunk from SSE:", {
+                                            type: parsedChunk.type,
+                                            errorText: errorText,
+                                            fullChunk: parsedChunk
+                                        });
+                                        streamError = new Error(errorText);
+                                        // Also pass through the error chunk so BlockNote can handle it
+                                        chunk = parsedChunk as any;
+                                    } else {
+                                        // Map delta to textDelta if needed
+                                        if (parsedChunk.type === 'text-delta' && parsedChunk.delta && !parsedChunk.textDelta) {
+                                            parsedChunk.textDelta = parsedChunk.delta;
+                                        }
+                                        // Pass through control chunks like 'start', 'finish', etc.
+                                        chunk = parsedChunk as any;
+                                    }
+                                } else if (typeof parsedChunk === 'string') {
+                                    // Sometimes it's just the text
+                                    chunk = {
+                                        type: 'text-delta',
+                                        textDelta: parsedChunk,
+                                        id: "msg_" + Date.now()
+                                    } as any;
+                                } else {
+                                    // Unknown object, assume it might be a text delta if it has content
+                                    // or just log it
+                                    console.log("⚠️ Background task: Unknown SSE object:", parsedChunk);
+                                }
+                            } catch (e) {
+                                // If it's not JSON, maybe it's just text?
+                                console.warn("⚠️ Background task: Failed to parse SSE data as JSON:", jsonStr, e);
+                            }
+                        } else {
+                            // Handle Vercel AI SDK Data Stream Protocol format: "0:{string}", "1:{json}", etc.
                             const firstColonIndex = line.indexOf(':');
                             if (firstColonIndex !== -1) {
                                 const type = line.slice(0, firstColonIndex);
-                                const content = line.slice(firstColonIndex + 1);
+                                const content = line.slice(firstColonIndex + 1).trim();
 
                                 try {
                                     // The content is JSON encoded
@@ -101,82 +185,113 @@ export class BackendTransport implements ChatTransport<any> {
 
                                     if (type === '0') {
                                         // Text delta
-                                        controller.enqueue({
+                                        chunk = {
                                             type: 'text-delta',
                                             textDelta: value, // Use textDelta as per AI SDK types
                                             id: "msg_" + Date.now()
-                                        } as any);
+                                        } as any;
                                     } else if (type === '1') {
                                         // Tool call
-                                        controller.enqueue({
+                                        chunk = {
                                             type: 'tool-call',
                                             toolCallId: value.toolCallId,
                                             toolName: value.toolName,
                                             args: value.args
-                                        } as any);
+                                        } as any;
                                     } else if (type === '2') {
                                         // Tool result
-                                        controller.enqueue({
+                                        chunk = {
                                             type: 'tool-result',
                                             toolCallId: value.toolCallId,
                                             result: value.result
-                                        } as any);
+                                        } as any;
                                     } else if (type === '3') {
                                         // Error
-                                        console.error("❌ Stream error chunk:", value);
-                                        // We can optionally throw or enqueue an error
-                                        // For now, just log it. The stream might end after this.
-                                    } else if (line.startsWith('data: ')) {
-                                        // Fallback for old SSE format if needed
-                                        const jsonStr = line.slice(6);
-                                        try {
-                                            const chunk = JSON.parse(jsonStr);
-                                            // Check if chunk is already in UIMessageChunk format or needs conversion
-                                            if (chunk.type) {
-                                                // Map delta to textDelta if needed
-                                                if (chunk.type === 'text-delta' && chunk.delta && !chunk.textDelta) {
-                                                    chunk.textDelta = chunk.delta;
-                                                }
-                                                controller.enqueue(chunk as any);
-                                            } else if (typeof chunk === 'string') {
-                                                // Sometimes it's just the text
-                                                controller.enqueue({
-                                                    type: 'text-delta',
-                                                    textDelta: chunk,
-                                                    id: "msg_" + Date.now()
-                                                } as any);
-                                            } else {
-                                                // Unknown object, assume it might be a text delta if it has content
-                                                // or just log it
-                                                console.log("⚠️ Unknown SSE object:", chunk);
-                                            }
-                                        } catch (e) {
-                                            // If it's not JSON, maybe it's just text?
-                                            console.warn("⚠️ Failed to parse SSE data as JSON:", jsonStr);
-                                        }
+                                        console.error("❌ Background task: Stream error chunk:", value);
+                                        streamError = new Error(value.message || "Stream error");
+                                    } else {
+                                        console.log("⚠️ Background task: Unknown data stream type:", type);
                                     }
                                 } catch (e) {
-                                    console.warn("⚠️ Failed to parse stream data:", line);
+                                    console.warn("⚠️ Background task: Failed to parse stream data:", line, e);
                                 }
                             }
                         }
-                    }
 
-                    try {
-                        controller.close();
-                    } catch (e) {
-                        // Stream might be already closed or errored
-                        console.warn("⚠️ Failed to close stream:", e);
-                    }
-                } catch (err) {
-                    console.error("❌ Stream error:", err);
-                    try {
-                        controller.error(err);
-                    } catch (e) {
-                        // Stream might be already closed
-                        console.warn("⚠️ Failed to error stream:", e);
+                        if (chunk) {
+                            const textDelta = (chunk as any).textDelta;
+                            console.log("📦 Background task: Enqueued chunk to queue:", chunk.type, textDelta ? `(textDelta: "${textDelta}")` : '');
+                            chunkQueue.push(chunk);
+                            // Notify pull() if it's waiting
+                            notifyPull();
+                        }
                     }
                 }
+
+                isStreamFinished = true;
+                console.log("✅ Background task: Finished, queue has", chunkQueue.length, "chunks");
+                // Notify pull() that stream is finished
+                notifyPull();
+            } catch (err) {
+                console.error("❌ Background task: Stream error:", err);
+                streamError = err instanceof Error ? err : new Error(String(err));
+                isStreamFinished = true;
+                notifyPull();
+            }
+        })();
+
+        // Create ReadableStream with pull() method for lazy consumption
+        return new ReadableStream<UIMessageChunk>({
+            async pull(controller) {
+                console.log("🔍 BackendTransport: Stream pull() called!");
+
+                // If there's an error, propagate it
+                if (streamError) {
+                    console.error("❌ BackendTransport: Propagating stream error:", streamError);
+                    controller.error(streamError);
+                    return;
+                }
+
+                // If queue has chunks, dequeue and enqueue to controller
+                if (chunkQueue.length > 0) {
+                    const chunk = chunkQueue.shift()!;
+                    console.log("📤 BackendTransport: Dequeuing and enqueueing chunk:", chunk.type);
+                    controller.enqueue(chunk);
+                    return;
+                }
+
+                // If stream is finished and queue is empty, close
+                if (isStreamFinished) {
+                    console.log("✅ BackendTransport: Stream finished, closing controller");
+                    controller.close();
+                    return;
+                }
+
+                // Queue is empty but stream is still active, wait for more chunks
+                console.log("⏳ BackendTransport: Queue empty, waiting for more chunks...");
+                await new Promise<void>((resolve) => {
+                    pullResolver = resolve;
+                });
+
+                // After waiting, try again
+                if (chunkQueue.length > 0) {
+                    const chunk = chunkQueue.shift()!;
+                    console.log("📤 BackendTransport: After wait, dequeuing chunk:", chunk.type);
+                    controller.enqueue(chunk);
+                } else if (isStreamFinished) {
+                    console.log("✅ BackendTransport: Stream finished after wait, closing");
+                    controller.close();
+                } else if (streamError) {
+                    console.error("❌ BackendTransport: Error after wait:", streamError);
+                    controller.error(streamError);
+                }
+            },
+
+            cancel(reason) {
+                console.log("🚫 BackendTransport: Stream cancelled:", reason);
+                reader.cancel(reason).catch((e) => {
+                    console.warn("⚠️ BackendTransport: Error cancelling reader:", e);
+                });
             }
         });
     }
