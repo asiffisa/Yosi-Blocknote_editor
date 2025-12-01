@@ -45,7 +45,7 @@ export function BlockNoteEditor({
     const [error, setError] = useState<Error | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Create AI extension - always create it, but handle missing API key gracefully
+    // Create AI extension - using BackendTransport
     const aiExtension = createAIExtension({
         transport: new BackendTransport({
             api: "/api/ai/chat",
@@ -54,7 +54,6 @@ export function BlockNoteEditor({
                     "Content-Type": "application/json",
                 };
             },
-            // Custom body to include user's API key and provider
             getExtraBody: async () => {
                 const settings = getAISettings();
 

@@ -1,7 +1,7 @@
-import { createOpenAI, openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { streamText } from "ai";
+import { streamText, convertToModelMessages } from "ai";
 
 export const maxDuration = 30;
 
@@ -33,99 +33,9 @@ export async function POST(req: Request) {
             );
         }
 
-        // Special handling for DeepSeek to bypass SDK compatibility issues
-        if (provider === "deepseek") {
-            console.log("Using direct fetch for DeepSeek");
-            console.log("DeepSeek Messages Payload:", JSON.stringify(messages, null, 2));
-
-            // Sanitize messages for DeepSeek
-            const sanitizedMessages = messages.map((msg: any) => ({
-                role: msg.role,
-                content: msg.content || "" // Ensure content is never undefined
-            }));
-
-            const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${userApiKey}`
-                },
-                body: JSON.stringify({
-                    model: model || "deepseek-chat",
-                    messages: sanitizedMessages,
-                    stream: true
-                })
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error("DeepSeek API Error:", response.status, errorText);
-                throw new Error(`DeepSeek API Error: ${response.status} ${errorText}`);
-            }
-
-            const encoder = new TextEncoder();
-            const decoder = new TextDecoder();
-
-            const stream = new ReadableStream({
-                async start(controller) {
-                    console.log("DeepSeek stream started");
-                    if (!response.body) {
-                        controller.close();
-                        return;
-                    }
-                    const reader = response.body.getReader();
-                    let buffer = "";
-
-                    try {
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) break;
-
-                            buffer += decoder.decode(value, { stream: true });
-                            const lines = buffer.split("\n");
-                            buffer = lines.pop() || "";
-
-                            for (const line of lines) {
-                                const trimmed = line.trim();
-                                if (!trimmed || !trimmed.startsWith("data: ")) continue;
-
-                                const data = trimmed.slice(6);
-                                if (data === "[DONE]") continue;
-
-                                try {
-                                    const json = JSON.parse(data);
-                                    const content = json.choices?.[0]?.delta?.content;
-                                    if (content) {
-                                        // Send in data stream format: 0:"text"
-                                        const chunk = `0:${JSON.stringify(content)}\n`;
-                                        controller.enqueue(encoder.encode(chunk));
-                                    }
-                                } catch (e) {
-                                    console.error("Error parsing DeepSeek chunk:", e);
-                                }
-                            }
-                        }
-                        console.log("DeepSeek stream completed");
-                        controller.close();
-                    } catch (error) {
-                        console.error("DeepSeek stream error:", error);
-                        controller.error(error);
-                    }
-                },
-            });
-
-            return new Response(stream, {
-                headers: {
-                    "Content-Type": "text/plain; charset=utf-8",
-                    "Transfer-Encoding": "chunked",
-                    "X-Vercel-AI-Data-Stream": "v1",
-                },
-            });
-        }
-
-        // Create model instance based on provider
         let modelInstance;
 
+        // Create model based on provider
         try {
             switch (provider) {
                 case "openai":
@@ -157,6 +67,15 @@ export async function POST(req: Request) {
                     modelInstance = anthropic(model || "claude-3-5-sonnet-20241022");
                     break;
 
+                case "deepseek":
+                    // Use OpenAI client for DeepSeek as it's compatible
+                    const deepseek = createOpenAI({
+                        apiKey: userApiKey,
+                        baseURL: "https://api.deepseek.com/v1",
+                    });
+                    modelInstance = deepseek(model || "deepseek-chat");
+                    break;
+
                 default:
                     return new Response(
                         JSON.stringify({ error: `Invalid provider: ${provider}` }),
@@ -181,84 +100,70 @@ export async function POST(req: Request) {
             );
         }
 
-        // Ensure model instance exists
-        if (!modelInstance) {
-            console.error("Model instance is undefined");
-            return new Response(
-                JSON.stringify({ error: "Failed to create language model" }),
-                {
-                    status: 500,
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
-        }
+        console.log("🚀 Calling streamText...");
 
-        console.log("Calling streamText with messages:", JSON.stringify(messages));
-        // Stream AI response
+        // Stream AI response using AI SDK's proper format
         const result = streamText({
-            model: modelInstance,
-            messages: messages,
-            ...(toolDefinitions && { tools: toolDefinitions }),
-            onFinish: (event) => {
-                console.log("Stream finished. Usage:", event.usage);
-                console.log("Finish reason:", event.finishReason);
-                console.log("Text:", event.text);
-            },
+            model: modelInstance!,
+            messages: convertToModelMessages(messages),
+            // Pass tools directly - AI SDK accepts the toolDefinitions object
+            ...(toolDefinitions && {
+                tools: toolDefinitions,
+                toolChoice: "auto" // Allow model to choose between text and tools
+            }),
         });
 
-        // Manual streaming with logging
-        const encoder = new TextEncoder();
-        const stream = new ReadableStream({
-            async start(controller) {
-                console.log("Stream started");
-                try {
-                    for await (const chunk of result.textStream) {
-                        console.log("Sending chunk:", chunk.length, "chars");
-                        // Send in data stream format: 0:"text"
-                        const line = `0:${JSON.stringify(chunk)}\n`;
-                        controller.enqueue(encoder.encode(line));
+        console.log("✅ streamText result created");
+
+        // Manually format to Data Stream Protocol to ensure tool calls are sent
+        // 0: text
+        // 9: tool call
+        const transformedStream = result.fullStream.pipeThrough(
+            new TransformStream({
+                transform(chunk, controller) {
+                    console.log("📦 Server chunk:", chunk.type);
+                    if (chunk.type === "text-delta") {
+                        const line = `0:${JSON.stringify(chunk.text)}\n`;
+                        console.log("📤 Emitting text:", line.trim());
+                        controller.enqueue(line);
+                    } else if (chunk.type === "tool-call") {
+                        const line = `9:${JSON.stringify({
+                            toolCallId: chunk.toolCallId,
+                            toolName: chunk.toolName,
+                            args: (chunk as any).args,
+                        })}\n`;
+                        console.log("📤 Emitting tool-call:", chunk.toolName);
+                        controller.enqueue(line);
+                    } else {
+                        console.log("⚠️ Skipping chunk type:", chunk.type);
                     }
-                    console.log("Stream completed");
-                    controller.close();
-                } catch (error) {
-                    console.error("Stream error:", error);
-                    controller.error(error);
-                }
-            },
-        });
+                },
+            })
+        );
 
-        return new Response(stream, {
+        console.log("🔄 Stream transformation configured");
+
+        // Return as plain text stream (Data Stream Protocol)
+        const encoder = new TextEncoder();
+        const encodedStream = transformedStream.pipeThrough(
+            new TransformStream({
+                transform(chunk, controller) {
+                    controller.enqueue(encoder.encode(chunk));
+                },
+            })
+        );
+
+        console.log("✅ Returning response");
+
+        return new Response(encodedStream, {
             headers: {
                 "Content-Type": "text/plain; charset=utf-8",
-                "Transfer-Encoding": "chunked",
                 "X-Vercel-AI-Data-Stream": "v1",
             },
         });
 
     } catch (error: any) {
         console.error("AI API Error:", error);
-
-        // Handle specific error types
-        if (error.message?.includes("API key") || error.message?.includes("401")) {
-            return new Response(
-                JSON.stringify({ error: "Invalid API key" }),
-                {
-                    status: 401,
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
-        }
-
-        if (error.message?.includes("rate limit") || error.message?.includes("429")) {
-            return new Response(
-                JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
-                {
-                    status: 429,
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
-        }
-
         return new Response(
             JSON.stringify({
                 error: error.message || "AI request failed"
