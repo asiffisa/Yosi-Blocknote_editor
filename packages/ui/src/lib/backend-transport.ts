@@ -9,7 +9,7 @@ interface BackendTransportOptions {
 /**
  * Transport that converts plain text SSE to UIMessageChunks  
  */
-export class BackendTransport implements ChatTransport {
+export class BackendTransport implements ChatTransport<any> {
     private api: string;
     private headers?: () => Promise<Record<string, string>>;
     private getExtraBody?: () => Promise<Record<string, any>>;
@@ -29,100 +29,153 @@ export class BackendTransport implements ChatTransport {
 
         console.log("📡 Fetching from:", this.api);
 
+        const requestBody = {
+            ...extraBody,
+            ...(body || {}),
+            messages, // Ensure messages is not overwritten
+        };
+
         const response = await fetch(this.api, {
             method: "POST",
             headers: {
+                "Content-Type": "application/json",
                 ...headers,
             },
-            body: JSON.stringify({
-                messages,
-                ...extraBody,
-                ...body,
-            }),
+            body: JSON.stringify(requestBody),
         });
 
         console.log("✅ Response received:", response.status);
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            try {
+                const errorBody = await response.text();
+                console.error("❌ Server error body:", errorBody);
+                errorMessage = `${errorMessage}\n${errorBody}`;
+            } catch (e) {
+                console.error("❌ Could not read error body");
+            }
+            throw new Error(errorMessage);
         }
 
-        // Return a ReadableStream that emits a single text chunk
+        // The backend returns toUIMessageStreamResponse() which is an HTTP Response
+        // with a stream encoded in a specific format. We need to decode it into UIMessageChunk objects.
+        console.log("✅ Manually parsing UI message stream");
+
         return new ReadableStream<UIMessageChunk>({
             async start(controller) {
                 const reader = response.body!.getReader();
                 const decoder = new TextDecoder();
                 let buffer = "";
 
-
-                console.log("📖 Reading stream...");
-
                 try {
                     while (true) {
                         const { done, value } = await reader.read();
-                        if (done) {
-                            console.log("✅ Stream done.");
-                            break;
-                        }
+                        if (done) break;
 
                         buffer += decoder.decode(value, { stream: true });
-                        console.log("📥 Buffer:", JSON.stringify(buffer));
                         const lines = buffer.split("\n");
                         buffer = lines.pop() || "";
 
                         for (const line of lines) {
-                            const trimmed = line.trim();
-                            if (!trimmed) continue;
+                            if (!line.trim()) continue;
 
-                            console.log("🔍 Processing line:", trimmed);
+                            // Handle Vercel AI SDK Data Stream Protocol
+                            // Format: "0:{string}" (text), "1:{json}" (tool call), etc.
 
-                            // Parse Data Stream Protocol
-                            // 0: "text"
-                            // 9: {"toolCallId":...}
+                            console.log("🔹 Raw line:", line);
 
-                            const colonIndex = trimmed.indexOf(':');
-                            if (colonIndex === -1) {
-                                console.log("⚠️ No colon found in line");
+                            if (line.trim() === 'data: [DONE]') {
+                                console.log("✅ Stream finished (legacy marker)");
                                 continue;
                             }
 
-                            const type = trimmed.slice(0, colonIndex);
-                            const content = trimmed.slice(colonIndex + 1);
+                            const firstColonIndex = line.indexOf(':');
+                            if (firstColonIndex !== -1) {
+                                const type = line.slice(0, firstColonIndex);
+                                const content = line.slice(firstColonIndex + 1);
 
-                            console.log("📊 Type:", type, "Content:", content);
+                                try {
+                                    // The content is JSON encoded
+                                    const value = JSON.parse(content);
 
-                            try {
-                                const data = JSON.parse(content);
-
-                                if (type === '0') {
-                                    // Text delta
-                                    console.log("📤 Enqueuing text-delta:", data);
-                                    controller.enqueue({
-                                        type: "text-delta",
-                                        textDelta: data,
-                                    } as any);
-                                } else if (type === '9') {
-                                    // Tool call
-                                    console.log("📤 Enqueuing tool-call:", data.toolName);
-                                    controller.enqueue({
-                                        type: "tool-call",
-                                        toolCallId: data.toolCallId,
-                                        toolName: data.toolName,
-                                        args: data.args,
-                                    } as any);
-                                } else {
-                                    console.log("⚠️ Unknown type:", type);
+                                    if (type === '0') {
+                                        // Text delta
+                                        controller.enqueue({
+                                            type: 'text-delta',
+                                            textDelta: value, // Use textDelta as per AI SDK types
+                                            id: "msg_" + Date.now()
+                                        } as any);
+                                    } else if (type === '1') {
+                                        // Tool call
+                                        controller.enqueue({
+                                            type: 'tool-call',
+                                            toolCallId: value.toolCallId,
+                                            toolName: value.toolName,
+                                            args: value.args
+                                        } as any);
+                                    } else if (type === '2') {
+                                        // Tool result
+                                        controller.enqueue({
+                                            type: 'tool-result',
+                                            toolCallId: value.toolCallId,
+                                            result: value.result
+                                        } as any);
+                                    } else if (type === '3') {
+                                        // Error
+                                        console.error("❌ Stream error chunk:", value);
+                                        // We can optionally throw or enqueue an error
+                                        // For now, just log it. The stream might end after this.
+                                    } else if (line.startsWith('data: ')) {
+                                        // Fallback for old SSE format if needed
+                                        const jsonStr = line.slice(6);
+                                        try {
+                                            const chunk = JSON.parse(jsonStr);
+                                            // Check if chunk is already in UIMessageChunk format or needs conversion
+                                            if (chunk.type) {
+                                                // Map delta to textDelta if needed
+                                                if (chunk.type === 'text-delta' && chunk.delta && !chunk.textDelta) {
+                                                    chunk.textDelta = chunk.delta;
+                                                }
+                                                controller.enqueue(chunk as any);
+                                            } else if (typeof chunk === 'string') {
+                                                // Sometimes it's just the text
+                                                controller.enqueue({
+                                                    type: 'text-delta',
+                                                    textDelta: chunk,
+                                                    id: "msg_" + Date.now()
+                                                } as any);
+                                            } else {
+                                                // Unknown object, assume it might be a text delta if it has content
+                                                // or just log it
+                                                console.log("⚠️ Unknown SSE object:", chunk);
+                                            }
+                                        } catch (e) {
+                                            // If it's not JSON, maybe it's just text?
+                                            console.warn("⚠️ Failed to parse SSE data as JSON:", jsonStr);
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.warn("⚠️ Failed to parse stream data:", line);
                                 }
-                            } catch (e) {
-                                console.error("❌ JSON parse error:", e);
                             }
                         }
                     }
 
-                    controller.close();
+                    try {
+                        controller.close();
+                    } catch (e) {
+                        // Stream might be already closed or errored
+                        console.warn("⚠️ Failed to close stream:", e);
+                    }
                 } catch (err) {
                     console.error("❌ Stream error:", err);
-                    controller.error(err);
+                    try {
+                        controller.error(err);
+                    } catch (e) {
+                        // Stream might be already closed
+                        console.warn("⚠️ Failed to error stream:", e);
+                    }
                 }
             }
         });
