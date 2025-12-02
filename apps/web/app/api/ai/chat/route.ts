@@ -244,11 +244,10 @@ export async function POST(req: Request) {
         const result = streamText({
             model: modelInstance!,
             messages: convertedMessages,
-            // Tools disabled due to schema validation error with AI SDK v5
-            // ...(convertedTools && {
-            //     tools: convertedTools,
-            //     toolChoice: "auto"
-            // }),
+            ...(convertedTools && {
+                tools: convertedTools,
+                toolChoice: "auto"
+            }),
             onError: ({ error }: { error: any }) => {
                 console.error(`❌ Stream error: ${error.message || error}`);
                 if (error.stack) console.error(error.stack);
@@ -257,7 +256,69 @@ export async function POST(req: Request) {
 
         console.log("✅ streamText result created");
 
-        // Return plain text stream
+        // Check for methods to handle potential version mismatches
+        // @ts-ignore
+        if (typeof result.toDataStreamResponse === 'function') {
+            console.log("✅ Using result.toDataStreamResponse()");
+            // @ts-ignore
+            return result.toDataStreamResponse();
+        }
+
+        // @ts-ignore
+        if (typeof result.toDataStream === 'function') {
+            console.log("✅ Using result.toDataStream() manual response");
+            // @ts-ignore
+            const stream = result.toDataStream();
+            return new Response(stream, {
+                headers: {
+                    'Content-Type': 'text/plain; charset=utf-8',
+                    'x-vercel-ai-data-stream': 'v1'
+                }
+            });
+        }
+
+        console.warn("⚠️ toDataStreamResponse and toDataStream are missing. Using manual pipeTextStreamToResponse fallback.");
+
+        // Manual fallback: Pipe text stream but wrap it to look like data stream? 
+        // Or just return text stream and let client handle it (we added fallback in client).
+        // But better to try to emit data stream format if possible.
+
+        // Let's try to use pipeDataStreamToResponse if available (server-side only usually)
+        // or construct a stream manually from fullStream
+
+        if (result.fullStream) {
+            const stream = new ReadableStream({
+                async start(controller) {
+                    const reader = result.fullStream.getReader();
+                    try {
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+
+                            // Value is a stream part
+                            if (value.type === 'text-delta') {
+                                controller.enqueue(new TextEncoder().encode(`0:${JSON.stringify(value.text)}\n`));
+                            } else if (value.type === 'tool-call') {
+                                controller.enqueue(new TextEncoder().encode(`9:${JSON.stringify(value)}\n`));
+                            }
+                            // Handle other types as needed
+                        }
+                    } catch (e) {
+                        controller.error(e);
+                    } finally {
+                        controller.close();
+                    }
+                }
+            });
+
+            return new Response(stream, {
+                headers: {
+                    'Content-Type': 'text/plain; charset=utf-8',
+                    'x-vercel-ai-data-stream': 'v1'
+                }
+            });
+        }
+
         return result.toTextStreamResponse();
     } catch (error: any) {
         console.error(`❌ Error in AI route: ${error.message}`);
