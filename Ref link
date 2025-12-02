@@ -1,0 +1,362 @@
+[AI SDK](https://ai-sdk.dev/)
+- [Docs](https://ai-sdk.dev/docs)
+- [Cookbook](https://ai-sdk.dev/cookbook)
+- [Providers](https://ai-sdk.dev/providers)
+- [Tools RegistryTools](https://ai-sdk.dev/tools-registry)
+- [Playground](https://ai-sdk.dev/playground)
+- [AI ElementsAI Elements](https://ai-sdk.dev/elements)
+- [AI GatewayGateway](https://vercel.com/ai-gateway)
+[Docs](https://ai-sdk.dev/docs)
+[Cookbook](https://ai-sdk.dev/cookbook)
+[Providers](https://ai-sdk.dev/providers)
+[Tools RegistryTools](https://ai-sdk.dev/tools-registry)
+[Playground](https://ai-sdk.dev/playground)
+[AI ElementsAI Elements](https://ai-sdk.dev/elements)
+[AI GatewayGateway](https://vercel.com/ai-gateway)
+AI SDK 6 is in Beta.
+[Learn more](https://ai-sdk.dev/docs/introduction/announcing-ai-sdk-6-beta)
+v5 (Latest)
+AI SDK 5.x
+[AI SDK Providers](https://ai-sdk.dev/providers/ai-sdk-providers)
+[AI Gateway](https://ai-sdk.dev/providers/ai-sdk-providers/ai-gateway)
+[xAI Grok](https://ai-sdk.dev/providers/ai-sdk-providers/xai)
+[Vercel](https://ai-sdk.dev/providers/ai-sdk-providers/vercel)
+[OpenAI](https://ai-sdk.dev/providers/ai-sdk-providers/openai)
+[Azure OpenAI](https://ai-sdk.dev/providers/ai-sdk-providers/azure)
+[Anthropic](https://ai-sdk.dev/providers/ai-sdk-providers/anthropic)
+[Amazon Bedrock](https://ai-sdk.dev/providers/ai-sdk-providers/amazon-bedrock)
+[Groq](https://ai-sdk.dev/providers/ai-sdk-providers/groq)
+[Fal](https://ai-sdk.dev/providers/ai-sdk-providers/fal)
+[DeepInfra](https://ai-sdk.dev/providers/ai-sdk-providers/deepinfra)
+[Black Forest Labs](https://ai-sdk.dev/providers/ai-sdk-providers/black-forest-labs)
+[Google Generative AI](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai)
+[Google Vertex AI](https://ai-sdk.dev/providers/ai-sdk-providers/google-vertex)
+[Mistral AI](https://ai-sdk.dev/providers/ai-sdk-providers/mistral)
+[Together.ai](https://ai-sdk.dev/providers/ai-sdk-providers/togetherai)
+[Cohere](https://ai-sdk.dev/providers/ai-sdk-providers/cohere)
+[Fireworks](https://ai-sdk.dev/providers/ai-sdk-providers/fireworks)
+[DeepSeek](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek)
+[Cerebras](https://ai-sdk.dev/providers/ai-sdk-providers/cerebras)
+[Replicate](https://ai-sdk.dev/providers/ai-sdk-providers/replicate)
+[Perplexity](https://ai-sdk.dev/providers/ai-sdk-providers/perplexity)
+[Luma](https://ai-sdk.dev/providers/ai-sdk-providers/luma)
+[ElevenLabs](https://ai-sdk.dev/providers/ai-sdk-providers/elevenlabs)
+[AssemblyAI](https://ai-sdk.dev/providers/ai-sdk-providers/assemblyai)
+[Deepgram](https://ai-sdk.dev/providers/ai-sdk-providers/deepgram)
+[Gladia](https://ai-sdk.dev/providers/ai-sdk-providers/gladia)
+[LMNT](https://ai-sdk.dev/providers/ai-sdk-providers/lmnt)
+[Hume](https://ai-sdk.dev/providers/ai-sdk-providers/hume)
+[Rev.ai](https://ai-sdk.dev/providers/ai-sdk-providers/revai)
+[Baseten](https://ai-sdk.dev/providers/ai-sdk-providers/baseten)
+[Hugging Face](https://ai-sdk.dev/providers/ai-sdk-providers/huggingface)
+[OpenAI Compatible Providers](https://ai-sdk.dev/providers/openai-compatible-providers)
+[Writing a Custom Provider](https://ai-sdk.dev/providers/openai-compatible-providers/custom-providers)
+[LM Studio](https://ai-sdk.dev/providers/openai-compatible-providers/lmstudio)
+[NVIDIA NIM](https://ai-sdk.dev/providers/openai-compatible-providers/nim)
+[Heroku](https://ai-sdk.dev/providers/openai-compatible-providers/heroku)
+[Community Providers](https://ai-sdk.dev/providers/community-providers)
+[Writing a Custom Provider](https://ai-sdk.dev/providers/community-providers/custom-providers)
+[Qwen](https://ai-sdk.dev/providers/community-providers/qwen)
+[Ollama](https://ai-sdk.dev/providers/community-providers/ollama)
+[A2A](https://ai-sdk.dev/providers/community-providers/a2a)
+[Requesty](https://ai-sdk.dev/providers/community-providers/requesty)
+[ACP (Agent Client Protocol)](https://ai-sdk.dev/providers/community-providers/acp)
+[Helicone](https://ai-sdk.dev/providers/community-providers/helicone)
+[FriendliAI](https://ai-sdk.dev/providers/community-providers/friendliai)
+[Portkey](https://ai-sdk.dev/providers/community-providers/portkey)
+[Cloudflare Workers AI](https://ai-sdk.dev/providers/community-providers/cloudflare-workers-ai)
+[Cloudflare AI Gateway](https://ai-sdk.dev/providers/community-providers/cloudflare-ai-gateway)
+[OpenRouter](https://ai-sdk.dev/providers/community-providers/openrouter)
+[Azure AI](https://ai-sdk.dev/providers/community-providers/azure-ai)
+
+[Aihubmix](https://ai-sdk.dev/providers/community-providers/aihubmix)
+[SAP AI Core](https://ai-sdk.dev/providers/community-providers/sap-ai)
+[Crosshatch](https://ai-sdk.dev/providers/community-providers/crosshatch)
+[Mixedbread](https://ai-sdk.dev/providers/community-providers/mixedbread)
+[Voyage AI](https://ai-sdk.dev/providers/community-providers/voyage-ai)
+[Jina AI](https://ai-sdk.dev/providers/community-providers/jina-ai)
+[Mem0](https://ai-sdk.dev/providers/community-providers/mem0)
+[Letta](https://ai-sdk.dev/providers/community-providers/letta)
+[Supermemory](https://ai-sdk.dev/providers/community-providers/supermemory)
+[React Native Apple](https://ai-sdk.dev/providers/community-providers/react-native-apple)
+[Anthropic Vertex](https://ai-sdk.dev/providers/community-providers/anthropic-vertex-ai)
+[Spark](https://ai-sdk.dev/providers/community-providers/spark)
+[Inflection AI](https://ai-sdk.dev/providers/community-providers/inflection-ai)
+[LangDB](https://ai-sdk.dev/providers/community-providers/langdb)
+[Zhipu AI](https://ai-sdk.dev/providers/community-providers/zhipu)
+[SambaNova](https://ai-sdk.dev/providers/community-providers/sambanova)
+[Dify](https://ai-sdk.dev/providers/community-providers/dify)
+[Sarvam](https://ai-sdk.dev/providers/community-providers/sarvam)
+[AI/ML API](https://ai-sdk.dev/providers/community-providers/aimlapi)
+[Claude Code](https://ai-sdk.dev/providers/community-providers/claude-code)
+[Built-in AI](https://ai-sdk.dev/providers/community-providers/built-in-ai)
+[Gemini CLI](https://ai-sdk.dev/providers/community-providers/gemini-cli)
+[MCP Sampling AI Provider](https://ai-sdk.dev/providers/community-providers/mcp-sampling)
+[Automatic1111](https://ai-sdk.dev/providers/community-providers/automatic1111)
+[Adapters](https://ai-sdk.dev/providers/adapters)
+[LangChain](https://ai-sdk.dev/providers/adapters/langchain)
+[LlamaIndex](https://ai-sdk.dev/providers/adapters/llamaindex)
+[Observability Integrations](https://ai-sdk.dev/providers/observability)
+[Axiom](https://ai-sdk.dev/providers/observability/axiom)
+[Braintrust](https://ai-sdk.dev/providers/observability/braintrust)
+[Helicone](https://ai-sdk.dev/providers/observability/helicone)
+[Laminar](https://ai-sdk.dev/providers/observability/laminar)
+[Langfuse](https://ai-sdk.dev/providers/observability/langfuse)
+[LangSmith](https://ai-sdk.dev/providers/observability/langsmith)
+[LangWatch](https://ai-sdk.dev/providers/observability/langwatch)
+[Maxim](https://ai-sdk.dev/providers/observability/maxim)
+[Patronus](https://ai-sdk.dev/providers/observability/patronus)
+[Scorecard](https://ai-sdk.dev/providers/observability/scorecard)
+[SigNoz](https://ai-sdk.dev/providers/observability/signoz)
+[Traceloop](https://ai-sdk.dev/providers/observability/traceloop)
+[Weave](https://ai-sdk.dev/providers/observability/weave)
+[AI SDK Providers](https://ai-sdk.dev/providers/ai-sdk-providers)
+
+# [DeepSeek Provider](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#deepseek-provider)
+
+[DeepSeek Provider](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#deepseek-provider)
+The [DeepSeek](https://www.deepseek.com) provider offers access to powerful language models through the DeepSeek API, including their [DeepSeek-V3 model](https://github.com/deepseek-ai/DeepSeek-V3).
+API keys can be obtained from the [DeepSeek Platform](https://platform.deepseek.com/api_keys).
+
+## [Setup](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#setup)
+[Setup](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#setup)
+The DeepSeek provider is available via the @ai-sdk/deepseek module. You can install it with:
+
+```
+@ai-sdk/deepseek
+```
+
+
+```
+pnpm add @ai-sdk/deepseek
+```
+
+## [Provider Instance](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#provider-instance)
+[Provider Instance](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#provider-instance)
+You can import the default provider instance deepseek from @ai-sdk/deepseek:
+
+```
+deepseek
+```
+
+
+```
+@ai-sdk/deepseek
+```
+
+
+```
+import { deepseek } from '@ai-sdk/deepseek';
+```
+
+
+```
+import { deepseek } from '@ai-sdk/deepseek';
+```
+
+For custom configuration, you can import createDeepSeek and create a provider instance with your settings:
+
+```
+createDeepSeek
+```
+
+
+```
+import { createDeepSeek } from '@ai-sdk/deepseek'; const deepseek = createDeepSeek({ apiKey: process.env.DEEPSEEK_API_KEY ?? '',});
+```
+
+
+```
+import { createDeepSeek } from '@ai-sdk/deepseek'; const deepseek = createDeepSeek({ apiKey: process.env.DEEPSEEK_API_KEY ?? '',});
+```
+
+You can use the following optional settings to customize the DeepSeek provider instance:
+- 
+baseURL string
+Use a different URL prefix for API calls.
+The default prefix is https://api.deepseek.com/v1.
+
+- 
+apiKey string
+API key that is being sent using the Authorization header. It defaults to
+the DEEPSEEK_API_KEY environment variable.
+
+- 
+headers Record<string,string>
+Custom headers to include in the requests.
+
+- 
+[fetch](https://developer.mozilla.org/en-US/docs/Web/API/fetch) (input: RequestInfo, init?: RequestInit) => Promise<Response>
+Custom fetch implementation.
+
+baseURL string
+Use a different URL prefix for API calls. The default prefix is https://api.deepseek.com/v1.
+
+```
+https://api.deepseek.com/v1
+```
+
+apiKey string
+API key that is being sent using the Authorization header. It defaults to the DEEPSEEK_API_KEY environment variable.
+
+```
+Authorization
+```
+
+
+```
+DEEPSEEK_API_KEY
+```
+
+headers Record<string,string>
+Custom headers to include in the requests.
+fetch (input: RequestInfo, init?: RequestInit) => Promise<Response>
+Custom [fetch](https://developer.mozilla.org/en-US/docs/Web/API/fetch) implementation.
+
+## [Language Models](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#language-models)
+[Language Models](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#language-models)
+You can create language models using a provider instance:
+
+```
+import { deepseek } from '@ai-sdk/deepseek';import { generateText } from 'ai'; const { text } = await generateText({ model: deepseek('deepseek-chat'), prompt: 'Write a vegetarian lasagna recipe for 4 people.',});
+```
+
+
+```
+import { deepseek } from '@ai-sdk/deepseek';import { generateText } from 'ai'; const { text } = await generateText({ model: deepseek('deepseek-chat'), prompt: 'Write a vegetarian lasagna recipe for 4 people.',});
+```
+
+You can also use the .chat() or .languageModel() factory methods:
+
+```
+.chat()
+```
+
+
+```
+.languageModel()
+```
+
+
+```
+const model = deepseek.chat('deepseek-chat');// orconst model = deepseek.languageModel('deepseek-chat');
+```
+
+
+```
+const model = deepseek.chat('deepseek-chat');// orconst model = deepseek.languageModel('deepseek-chat');
+```
+
+DeepSeek language models can be used in the streamText function (see [AI SDK Core](https://ai-sdk.dev/docs/ai-sdk-core)).
+
+```
+streamText
+```
+
+### [Reasoning](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#reasoning)
+[Reasoning](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#reasoning)
+DeepSeek has reasoning support for the deepseek-reasoner model. The reasoning is exposed through streaming:
+
+```
+deepseek-reasoner
+```
+
+
+```
+import { deepseek } from '@ai-sdk/deepseek';import { streamText } from 'ai'; const result = streamText({ model: deepseek('deepseek-reasoner'), prompt: 'How many "r"s are in the word "strawberry"?',}); for await (const part of result.fullStream) { if (part.type === 'reasoning') { // This is the reasoning text console.log('Reasoning:', part.text); } else if (part.type === 'text') { // This is the final answer console.log('Answer:', part.text); }}
+```
+
+
+```
+import { deepseek } from '@ai-sdk/deepseek';import { streamText } from 'ai'; const result = streamText({ model: deepseek('deepseek-reasoner'), prompt: 'How many "r"s are in the word "strawberry"?',}); for await (const part of result.fullStream) { if (part.type === 'reasoning') { // This is the reasoning text console.log('Reasoning:', part.text); } else if (part.type === 'text') { // This is the final answer console.log('Answer:', part.text); }}
+```
+
+See [AI SDK UI: Chatbot](https://ai-sdk.dev/docs/ai-sdk-ui/chatbot#reasoning) for more details on how to integrate reasoning into your chatbot.
+
+### [Cache Token Usage](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#cache-token-usage)
+[Cache Token Usage](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#cache-token-usage)
+DeepSeek provides context caching on disk technology that can significantly reduce token costs for repeated content. You can access the cache hit/miss metrics through the providerMetadata property in the response:
+
+```
+providerMetadata
+```
+
+
+```
+import { deepseek } from '@ai-sdk/deepseek';import { generateText } from 'ai'; const result = await generateText({ model: deepseek('deepseek-chat'), prompt: 'Your prompt here',}); console.log(result.providerMetadata);// Example output: { deepseek: { promptCacheHitTokens: 1856, promptCacheMissTokens: 5 } }
+```
+
+
+```
+import { deepseek } from '@ai-sdk/deepseek';import { generateText } from 'ai'; const result = await generateText({ model: deepseek('deepseek-chat'), prompt: 'Your prompt here',}); console.log(result.providerMetadata);// Example output: { deepseek: { promptCacheHitTokens: 1856, promptCacheMissTokens: 5 } }
+```
+
+The metrics include:
+- promptCacheHitTokens: Number of input tokens that were cached
+- promptCacheMissTokens: Number of input tokens that were not cached
+
+```
+promptCacheHitTokens
+```
+
+
+```
+promptCacheMissTokens
+```
+
+For more details about DeepSeek's caching system, see the [DeepSeek caching documentation](https://api-docs.deepseek.com/guides/kv_cache#checking-cache-hit-status).
+
+## [Model Capabilities](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#model-capabilities)
+
+[Model Capabilities](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#model-capabilities)
+
+```
+deepseek-chat
+```
+
+
+```
+deepseek-reasoner
+```
+
+Please see the [DeepSeek docs](https://api-docs.deepseek.com) for a full list of available models. You can also pass any available provider model ID as a string if needed.
+[PreviousFireworks](https://ai-sdk.dev/providers/ai-sdk-providers/fireworks)
+[NextCerebras](https://ai-sdk.dev/providers/ai-sdk-providers/cerebras)
+[DeepSeek Provider](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#deepseek-provider)
+[Setup](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#setup)
+[Provider Instance](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#provider-instance)
+[Language Models](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#language-models)
+[Reasoning](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#reasoning)
+[Cache Token Usage](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#cache-token-usage)
+[Model Capabilities](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#model-capabilities)
+Deliver AI experiences globally with one push.
+- OpenAI
+- Photoroom
+- 
+- 
+[Sign Up](https://vercel.com/signup?utm_source=ai-sdk_site&utm_medium=docs_card&utm_content=sign-up)
+
+#### Resources
+[Docs](https://ai-sdk.dev/docs)
+[Cookbook](https://ai-sdk.dev/cookbook)
+[Providers](https://ai-sdk.dev/providers)
+[Tools Registry](https://ai-sdk.dev/tools-registry)
+[Showcase](https://ai-sdk.dev/showcase)
+[GitHub](https://github.com/vercel/ai)
+[Discussions](https://github.com/vercel/ai/discussions)
+
+#### More
+[Playground](https://ai-sdk.dev/playground)
+[Workflow Dev Kit](https://useworkflow.dev/)
+[Flags SDK](https://flags-sdk.dev/)
+[Contact Sales](https://vercel.com/contact/sales)
+
+#### About Vercel
+[Next.js + Vercel](https://vercel.com/frameworks/nextjs)
+[Open Source Software](https://vercel.com/oss)
+[GitHub](https://github.com/vercel)
+[X](https://x.com/vercel)
+
+#### Legal
+[Privacy Policy](https://vercel.com/legal/privacy-policy)
+© 2025 Vercel, Inc.

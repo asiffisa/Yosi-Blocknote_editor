@@ -154,11 +154,45 @@ export async function POST(req: Request) {
         console.log("🤖 Provider:", provider);
         console.log("📨 Incoming messages (raw):", JSON.stringify(messages, null, 2));
 
-        // Filter out messages with empty content to prevent model errors
-        const validMessages = (messages || []).filter((m: any) => {
-            if (m.parts && Array.isArray(m.parts) && m.parts.length > 0) return true;
-            return m.content && (typeof m.content === 'string' ? m.content.trim() !== "" : true);
+        // CRITICAL FIX: BlockNote sends messages with 'parts' not 'content'
+        // We need to convert parts to content FIRST
+        const messagesWithContent = (messages || []).map((m: any) => {
+            // If message has parts but no content, extract content from parts
+            if (m.parts && Array.isArray(m.parts) && m.parts.length > 0 && !m.content) {
+                // Extract text from all parts
+                const textParts = m.parts
+                    .filter((p: any) => p.type === 'text' && p.text)
+                    .map((p: any) => p.text);
+
+                // Join all text parts into single content string
+                return {
+                    ...m,
+                    content: textParts.join('\n'),
+                };
+            }
+            return m;
         });
+
+        console.log("🔧 [FIX] Messages after parts-to-content conversion:", JSON.stringify(messagesWithContent, null, 2));
+
+        // Filter out messages with empty content to prevent model errors
+        const validMessages = messagesWithContent.filter((m: any) => {
+            // Skip if parts array exists but is empty
+            if (m.parts && Array.isArray(m.parts) && m.parts.length === 0) {
+                return false;
+            }
+
+            // Keep message if it has non-empty content
+            if (!m.content) return false;
+
+            if (typeof m.content === 'string') {
+                return m.content.trim().length > 0;
+            }
+
+            return true; // Keep array content as-is
+        });
+
+        console.log("🔍 Valid messages after filtering:", validMessages.length, "messages");
 
         if (validMessages.length === 0) {
             console.warn("⚠️ No valid messages found. Adding a default user message.");
@@ -171,104 +205,26 @@ export async function POST(req: Request) {
 
         console.log("🔍 Valid messages before conversion:", JSON.stringify(validMessages, null, 2));
 
-        // Use AI SDK's convertToModelMessages to properly convert UIMessage[] to ModelMessage[]
-        // This handles all the edge cases and format requirements
-        // Note: convertToModelMessages expects UIMessage[] format, so we pass messages as-is
-        // and add system message after conversion if needed
-        let convertedMessages;
-        try {
-            console.log("🔄 Using convertToModelMessages to convert UIMessage[] to ModelMessage[]");
-            console.log("📥 Input messages for conversion:", JSON.stringify(validMessages, null, 2));
-            convertedMessages = convertToModelMessages(validMessages);
-            console.log("✅ convertToModelMessages succeeded");
-            console.log("📨 Converted messages:", JSON.stringify(convertedMessages, null, 2));
+        // Simplified message conversion - convert to CoreMessage format
+        console.log("🔄 Converting messages to CoreMessage format");
+        const convertedMessages = validMessages.map((m: any) => ({
+            role: m.role,
+            content: m.content,
+        }));
 
-            // Add system message after conversion (as a ModelMessage)
-            if (convertedMessages.length > 0 && convertedMessages[0].role !== 'system') {
-                convertedMessages.unshift({
-                    role: 'system',
-                    content: "You are a helpful AI assistant."
-                });
-            }
-        } catch (conversionError: any) {
-            console.error("❌ convertToModelMessages failed:", conversionError);
-            console.error("❌ Conversion error details:", {
-                message: conversionError.message,
-                stack: conversionError.stack,
-                inputMessages: validMessages
+        console.log("✅ Messages converted:", JSON.stringify(convertedMessages, null, 2));
+        console.log("🔍 [DEBUG] Number of converted messages:", convertedMessages.length);
+        console.log("🔍 [DEBUG] First user message:", convertedMessages.find(m => m.role === 'user')?.content);
+
+        // Add system message if not present
+        if (convertedMessages.length > 0 && convertedMessages[0].role !== 'system') {
+            convertedMessages.unshift({
+                role: 'system',
+                content: "You are a helpful AI assistant."
             });
-            // Fallback to manual conversion for backwards compatibility
-            console.log("⚠️ Falling back to manual conversion");
-
-            convertedMessages = validMessages.map((m: any) => {
-                const role = m.role;
-
-                // Validate role
-                if (!['system', 'user', 'assistant', 'tool'].includes(role)) {
-                    console.warn(`⚠️ Invalid role: ${role}, skipping message.`);
-                    return null;
-                }
-
-                // Handle parts if present (new AI SDK format)
-                if (m.parts && Array.isArray(m.parts)) {
-                    let filteredParts = m.parts;
-
-                    // Strict content validation per role
-                    if (role === 'user') {
-                        // User can have text or image
-                        filteredParts = m.parts.filter((p: any) => p.type === 'text' || p.type === 'image');
-                    } else if (role === 'assistant') {
-                        // Assistant can have text or tool-call (but we are filtering tool calls for now)
-                        filteredParts = m.parts.filter((p: any) => p.type === 'text');
-                    } else if (role === 'tool') {
-                        // Tool messages must have tool-result
-                        // Since we are disabling tools, we should probably skip tool messages entirely
-                        return null;
-                    } else if (role === 'system') {
-                        // System messages usually just have content string, but if parts, text only
-                        filteredParts = m.parts.filter((p: any) => p.type === 'text');
-                    }
-
-                    if (filteredParts.length === 0) return null;
-
-                    return {
-                        role: role as "system" | "user" | "assistant" | "tool",
-                        content: filteredParts.map((p: any) => {
-                            if (p.type === 'text') return { type: 'text', text: p.text };
-                            // Add other part types if needed and valid for role
-                            return p;
-                        }),
-                    };
-                }
-
-                // Handle simple content string
-                if (typeof m.content === 'string') {
-                    // System messages are fine as string
-                    // User messages are fine as string
-                    // Assistant messages are fine as string
-                    // Tool messages usually need parts (tool-result), so skip if string unless we know better
-                    if (role === 'tool') return null;
-
-                    // Check for empty string
-                    if (m.content.trim() === "") return null;
-
-                    return {
-                        role: role as "system" | "user" | "assistant" | "tool",
-                        content: m.content,
-                    };
-                }
-
-                return null;
-            }).filter((m: any) => m !== null); // Remove null messages
-
-            // Add system message after manual conversion
-            if (convertedMessages.length > 0 && convertedMessages[0].role !== 'system') {
-                convertedMessages.unshift({
-                    role: 'system',
-                    content: "You are a helpful AI assistant."
-                });
-            }
         }
+
+        console.log("🔍 [DEBUG] Final messages sent to AI:", JSON.stringify(convertedMessages, null, 2));
 
         if (!convertedMessages || convertedMessages.length === 0) {
             return new Response(JSON.stringify({ error: "No valid messages with content provided" }), {
@@ -290,7 +246,7 @@ export async function POST(req: Request) {
 
         console.log("✅ streamText result created");
 
-        // Return plain text stream (compatible with BlockNote transport parser)
+        // Return plain text stream
         return result.toTextStreamResponse();
     } catch (error: any) {
         console.error("❌ Error in AI route:", error);

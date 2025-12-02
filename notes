@@ -1,0 +1,134 @@
+## [Setup](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#setup)
+[Setup](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#setup)
+The DeepSeek provider is available via the @ai-sdk/deepseek module. You can install it with:
+
+```
+@ai-sdk/deepseek
+```
+
+
+```
+pnpm add @ai-sdk/deepseek
+```
+
+## [Provider Instance](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#provider-instance)
+[Provider Instance](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#provider-instance)
+You can import the default provider instance deepseek from @ai-sdk/deepseek:
+
+```
+deepseek
+```
+
+
+```
+@ai-sdk/deepseek
+```
+
+
+```
+import { deepseek } from '@ai-sdk/deepseek';
+```
+
+
+```
+import { deepseek } from '@ai-sdk/deepseek';
+```
+
+For custom configuration, you can import createDeepSeek and create a provider instance with your settings:
+
+```
+createDeepSeek
+```
+
+
+```
+import { createDeepSeek } from '@ai-sdk/deepseek'; const deepseek = createDeepSeek({ apiKey: process.env.DEEPSEEK_API_KEY ?? '',});
+```
+
+
+```
+import { createDeepSeek } from '@ai-sdk/deepseek'; const deepseek = createDeepSeek({ apiKey: process.env.DEEPSEEK_API_KEY ?? '',});
+```
+
+You can use the following optional settings to customize the DeepSeek provider instance:
+- 
+baseURL string
+Use a different URL prefix for API calls.
+The default prefix is https://api.deepseek.com/v1.
+
+- 
+apiKey string
+API key that is being sent using the Authorization header. It defaults to
+the DEEPSEEK_API_KEY environment variable.
+
+- 
+headers Record<string,string>
+Custom headers to include in the requests.
+
+- 
+[fetch](https://developer.mozilla.org/en-US/docs/Web/API/fetch) (input: RequestInfo, init?: RequestInit) => Promise<Response>
+Custom fetch implementation.
+
+baseURL string
+Use a different URL prefix for API calls. The default prefix is https://api.deepseek.com/v1.
+
+```
+https://api.deepseek.com/v1
+```
+
+apiKey string
+API key that is being sent using the Authorization header. It defaults to the DEEPSEEK_API_KEY environment variable.
+
+```
+Authorization
+```
+
+
+```
+DEEPSEEK_API_KEY
+```
+
+headers Record<string,string>
+Custom headers to include in the requests.
+fetch (input: RequestInfo, init?: RequestInit) => Promise<Response>
+Custom [fetch](https://developer.mozilla.org/en-US/docs/Web/API/fetch) implementation.
+
+## [Language Models](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#language-models)
+[Language Models](https://ai-sdk.dev/providers/ai-sdk-providers/deepseek#language-models)
+You can create language models using a provider instance:
+
+```
+import { deepseek } from '@ai-sdk/deepseek';import { generateText } from 'ai'; const { text } = await generateText({ model: deepseek('deepseek-chat'), prompt: 'Write a vegetarian lasagna recipe for 4 people.',});
+```
+
+
+```
+import { deepseek } from '@ai-sdk/deepseek';import { generateText } from 'ai'; const { text } = await generateText({ model: deepseek('deepseek-chat'), prompt: 'Write a vegetarian lasagna recipe for 4 people.',});
+```
+
+You can also use the .chat() or .languageModel() factory methods:
+
+```
+.chat()
+```
+
+
+```
+.languageModel()
+```
+
+
+```
+const model = deepseek.chat('deepseek-chat');// orconst model = deepseek.languageModel('deepseek-chat');
+```
+
+
+```
+const model = deepseek.chat('deepseek-chat');// orconst model = deepseek.languageModel('deepseek-chat');
+```
+
+DeepSeek language models can be used in the streamText function (see [AI SDK Core](https://ai-sdk.dev/docs/ai-sdk-core)).
+
+```
+streamText
+```
