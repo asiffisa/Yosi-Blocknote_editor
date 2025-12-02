@@ -130,6 +130,12 @@ export async function POST(req: Request) {
                     // Recursively clean children
                     cleaned[key] = cleanSchema(value);
                 }
+
+                // If object has 'properties' but no 'type', infer 'type': 'object'
+                if (cleaned.properties && !cleaned.type) {
+                    cleaned.type = 'object';
+                }
+
                 return cleaned;
             }
 
