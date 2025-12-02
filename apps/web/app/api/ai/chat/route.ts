@@ -182,7 +182,7 @@ export async function POST(req: Request) {
             convertedMessages = convertToModelMessages(validMessages);
             console.log("✅ convertToModelMessages succeeded");
             console.log("📨 Converted messages:", JSON.stringify(convertedMessages, null, 2));
-            
+
             // Add system message after conversion (as a ModelMessage)
             if (convertedMessages.length > 0 && convertedMessages[0].role !== 'system') {
                 convertedMessages.unshift({
@@ -199,7 +199,7 @@ export async function POST(req: Request) {
             });
             // Fallback to manual conversion for backwards compatibility
             console.log("⚠️ Falling back to manual conversion");
-            
+
             convertedMessages = validMessages.map((m: any) => {
                 const role = m.role;
 
@@ -260,7 +260,7 @@ export async function POST(req: Request) {
 
                 return null;
             }).filter((m: any) => m !== null); // Remove null messages
-            
+
             // Add system message after manual conversion
             if (convertedMessages.length > 0 && convertedMessages[0].role !== 'system') {
                 convertedMessages.unshift({
@@ -290,8 +290,8 @@ export async function POST(req: Request) {
 
         console.log("✅ streamText result created");
 
-        // Return using the AI SDK's toUIMessageStreamResponse
-        return result.toUIMessageStreamResponse();
+        // Return plain text stream (compatible with BlockNote transport parser)
+        return result.toTextStreamResponse();
     } catch (error: any) {
         console.error("❌ Error in AI route:", error);
 

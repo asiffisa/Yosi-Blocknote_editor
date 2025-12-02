@@ -9,7 +9,7 @@ import "@blocknote/xl-ai/style.css";
 import { en as defaultEn } from "@blocknote/core/locales";
 import { en as aiEn } from "@blocknote/xl-ai/locales";
 import { createAIExtension } from "@blocknote/xl-ai";
-import { BackendTransport } from "../lib/backend-transport";
+import { OptimizedBlockNoteTransport } from "../lib/blocknote-transport";
 
 import type { BlockNoteEditorProps } from "../types";
 import { EditorErrorFallback } from "./editor-error-boundary";
@@ -45,9 +45,9 @@ export function BlockNoteEditor({
     const [error, setError] = useState<Error | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Create AI extension - using BackendTransport
+    // Create AI extension - using OptimizedBlockNoteTransport
     const aiExtension = createAIExtension({
-        transport: new BackendTransport({
+        transport: new OptimizedBlockNoteTransport({
             api: "/api/ai/chat",
             headers: async () => {
                 return {
@@ -96,6 +96,10 @@ export function BlockNoteEditor({
         } else if (isLoading) {
             setIsLoading(false);
         }
+
+
+        // Add error listeners to catch BlockNote AI errors  
+        // Note: Removed due to compatibility issues with BlockNote extension API
     } catch (err) {
         setError(err instanceof Error ? err : new Error("Failed to create editor"));
         setIsLoading(false);

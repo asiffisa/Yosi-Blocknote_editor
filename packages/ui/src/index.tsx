@@ -8,5 +8,7 @@ export * from "./components/ai/ai-components";
 export * from "./components/ai/ai-commands";
 export * from "./components/ai/ai-menu";
 export * from "./lib/ai-key-manager";
+export * from "./lib/message-converter";
+export * from "./lib/blocknote-transport";
 export * from "./types";
 
