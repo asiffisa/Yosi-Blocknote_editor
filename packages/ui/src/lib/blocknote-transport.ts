@@ -83,6 +83,7 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
                     const { done, value } = await reader.read();
 
                     if (done) {
+                        console.log('VercelV5ChatTransport: Stream done');
                         if (buffer.trim()) {
                             processBuffer(buffer);
                         }
@@ -91,6 +92,7 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
                     }
 
                     const chunkStr = decoder.decode(value, { stream: true });
+                    console.log('VercelV5ChatTransport: Received chunk:', JSON.stringify(chunkStr));
                     buffer += chunkStr;
 
                     // Split by newline, but keep the last part in buffer if it's incomplete
@@ -109,58 +111,41 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
 
                         // Try to detect protocol format
                         const separatorIndex = line.indexOf(':');
-                        let isProtocol = false;
 
                         if (separatorIndex !== -1) {
                             const type = line.slice(0, separatorIndex);
                             const content = line.slice(separatorIndex + 1);
 
-                            if (['0', '9', 'e', 'd', '8'].includes(type)) {
-                                if (type === '0') { // Text Delta
-                                    try {
-                                        const textDelta = JSON.parse(content);
-                                        if (typeof textDelta === 'string') {
-                                            isProtocol = true;
-                                            appendChunk(textDelta);
-                                        }
-                                    } catch (e) {
-                                        // Ignore parse errors
+                            if (type === '0') { // Text Delta
+                                try {
+                                    const textDelta = JSON.parse(content);
+                                    if (typeof textDelta === 'string') {
+                                        fullText += textDelta;
+
+                                        // Construct the chunk object expected by BlockNote (UIMessage)
+                                        // BlockNote expects content to be an array of parts with type 'text'
+                                        const textPart = {
+                                            type: 'text' as const,
+                                            text: fullText
+                                        };
+
+                                        const chunk = {
+                                            type: 'text', // Add type to prevent crash in isDataUIMessageChunk
+                                            id: messageId,
+                                            createdAt: new Date(),
+                                            role: 'assistant' as const,
+                                            content: [textPart],
+                                            parts: [textPart],
+                                        };
+
+                                        controller.enqueue(chunk);
                                     }
-                                } else if (type === '9') {
-                                    isProtocol = true;
-                                } else {
-                                    // Other protocol types
-                                    isProtocol = true;
+                                } catch (e) {
+                                    // Ignore parse errors
                                 }
                             }
+                            // Ignore other types (tool calls, etc.) for now as we just want text streaming to work first
                         }
-
-                        // Fallback: Treat as raw text if not identified as protocol
-                        if (!isProtocol) {
-                            // If it's raw text, we should append it directly.
-                            appendChunk(line);
-                        }
-                    }
-
-                    function appendChunk(text: string) {
-                        fullText += text;
-
-                        // Construct the chunk object expected by BlockNote (UIMessage)
-                        const textPart = {
-                            type: 'text' as const,
-                            text: fullText
-                        };
-
-                        const chunk = {
-                            type: 'text', // Add type to prevent crash in isDataUIMessageChunk
-                            id: messageId,
-                            createdAt: new Date(),
-                            role: 'assistant' as const,
-                            content: [textPart], // BlockNote expects an array of parts
-                            parts: [textPart],
-                        };
-
-                        controller.enqueue(chunk);
                     }
 
                 } catch (error) {

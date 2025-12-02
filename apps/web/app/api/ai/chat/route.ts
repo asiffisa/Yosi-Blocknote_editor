@@ -270,53 +270,12 @@ export async function POST(req: Request) {
             return result.toDataStreamResponse();
         }
 
+        // Fallback for older SDK versions or different return types
         // @ts-ignore
         if (typeof result.toDataStream === 'function') {
             console.log("✅ Using result.toDataStream() manual response");
             // @ts-ignore
             const stream = result.toDataStream();
-            return new Response(stream, {
-                headers: {
-                    'Content-Type': 'text/plain; charset=utf-8',
-                    'x-vercel-ai-data-stream': 'v1'
-                }
-            });
-        }
-
-        console.warn("⚠️ toDataStreamResponse and toDataStream are missing. Using manual pipeTextStreamToResponse fallback.");
-
-        // Manual fallback: Pipe text stream but wrap it to look like data stream? 
-        // Or just return text stream and let client handle it (we added fallback in client).
-        // But better to try to emit data stream format if possible.
-
-        // Let's try to use pipeDataStreamToResponse if available (server-side only usually)
-        // or construct a stream manually from fullStream
-
-        if (result.fullStream) {
-            const stream = new ReadableStream({
-                async start(controller) {
-                    const reader = result.fullStream.getReader();
-                    try {
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) break;
-
-                            // Value is a stream part
-                            if (value.type === 'text-delta') {
-                                controller.enqueue(new TextEncoder().encode(`0:${JSON.stringify(value.text)}\n`));
-                            } else if (value.type === 'tool-call') {
-                                controller.enqueue(new TextEncoder().encode(`9:${JSON.stringify(value)}\n`));
-                            }
-                            // Handle other types as needed
-                        }
-                    } catch (e) {
-                        controller.error(e);
-                    } finally {
-                        controller.close();
-                    }
-                }
-            });
-
             return new Response(stream, {
                 headers: {
                     'Content-Type': 'text/plain; charset=utf-8',
