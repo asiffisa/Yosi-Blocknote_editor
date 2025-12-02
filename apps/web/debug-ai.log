@@ -1,0 +1,36 @@
+[2025-12-02T17:47:08.202Z] ========== AI ROUTE CALLED ==========
+[2025-12-02T17:47:08.203Z] 🔵 Initializing DeepSeek provider
+[2025-12-02T17:47:08.204Z] 🔵 DeepSeek model: deepseek-chat
+[2025-12-02T17:47:08.204Z] 🚀 Calling streamText with model: deepseek-chat
+[2025-12-02T17:47:08.204Z] 🤖 Provider: deepseek
+[2025-12-02T17:47:08.205Z] ✅ streamText result created
+[2025-12-02T17:47:08.395Z] ❌ Stream error: Authentication Fails, Your api key: ****-key is invalid
+[2025-12-02T17:47:08.395Z] AI_APICallError: Authentication Fails, Your api key: ****-key is invalid
+    at /Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/node_modules__pnpm_b04dbb82._.js:1499:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async postToApi (/Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/node_modules__pnpm_b04dbb82._.js:1373:36)
+    at async OpenAIResponsesLanguageModel.doStream (/Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/4a431_@ai-sdk_openai_dist_index_mjs_f796bc55._.js:3656:54)
+    at async fn (/Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/04981_ai_dist_index_mjs_3b3b21d1._.js:4894:45)
+    at async /Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/04981_ai_dist_index_mjs_3b3b21d1._.js:1671:28
+    at async _retryWithExponentialBackoff (/Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/04981_ai_dist_index_mjs_3b3b21d1._.js:1802:16)
+    at async streamStep (/Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/04981_ai_dist_index_mjs_3b3b21d1._.js:4851:112)
+    at async fn (/Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/04981_ai_dist_index_mjs_3b3b21d1._.js:5194:17)
+    at async /Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/04981_ai_dist_index_mjs_3b3b21d1._.js:1671:28
+[2025-12-02T17:49:35.863Z] ========== AI ROUTE CALLED ==========
+[2025-12-02T17:49:35.867Z] 🔵 Initializing DeepSeek provider
+[2025-12-02T17:49:35.868Z] 🔵 DeepSeek model: deepseek-chat
+[2025-12-02T17:49:35.868Z] 🚀 Calling streamText with model: deepseek-chat
+[2025-12-02T17:49:35.868Z] 🤖 Provider: deepseek
+[2025-12-02T17:49:35.870Z] ✅ streamText result created
+[2025-12-02T17:49:36.049Z] ❌ Stream error: Authentication Fails, Your api key: ****-key is invalid
+[2025-12-02T17:49:36.049Z] AI_APICallError: Authentication Fails, Your api key: ****-key is invalid
+    at /Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/node_modules__pnpm_b04dbb82._.js:1499:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async postToApi (/Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/node_modules__pnpm_b04dbb82._.js:1373:36)
+    at async OpenAIResponsesLanguageModel.doStream (/Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/4a431_@ai-sdk_openai_dist_index_mjs_f796bc55._.js:3656:54)
+    at async fn (/Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/04981_ai_dist_index_mjs_3b3b21d1._.js:4894:45)
+    at async /Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/04981_ai_dist_index_mjs_3b3b21d1._.js:1671:28
+    at async _retryWithExponentialBackoff (/Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/04981_ai_dist_index_mjs_3b3b21d1._.js:1802:16)
+    at async streamStep (/Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/04981_ai_dist_index_mjs_3b3b21d1._.js:4851:112)
+    at async fn (/Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/04981_ai_dist_index_mjs_3b3b21d1._.js:5194:17)
+    at async /Users/asif/Documents/Yosi/apps/web/.next/dev/server/chunks/04981_ai_dist_index_mjs_3b3b21d1._.js:1671:28

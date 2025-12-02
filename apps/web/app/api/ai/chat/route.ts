@@ -72,12 +72,18 @@ export async function POST(req: Request) {
                     modelInstance = anthropic(model || "claude-3-5-sonnet-20241022");
                     break;
 
-                // case "deepseek":
-                //     const deepseekProvider = createDeepSeek({
-                //         apiKey: userApiKey,
-                //     });
-                //     modelInstance = deepseekProvider(model || "deepseek-chat");
-                //     break;
+                case "deepseek":
+                    console.log("🔵 Initializing DeepSeek provider");
+
+                    // DeepSeek is compatible with OpenAI SDK
+                    const deepseek = createOpenAI({
+                        baseURL: "https://api.deepseek.com",
+                        apiKey: userApiKey?.trim(),
+                    });
+                    const deepseekModel = model || "deepseek-chat";
+                    console.log(`🔵 DeepSeek model: ${deepseekModel}`);
+                    modelInstance = deepseek(deepseekModel);
+                    break;
 
                 default:
                     return new Response(
@@ -89,7 +95,7 @@ export async function POST(req: Request) {
                     );
             }
 
-            console.log("Model instance created successfully");
+            console.log("✅ Model instance created successfully");
         } catch (modelError: any) {
             console.error("Model creation error:", modelError);
             return new Response(
@@ -131,6 +137,7 @@ export async function POST(req: Request) {
         }
 
         let convertedTools: any = undefined;
+        console.log("🔍 Checking tool definitions...");
         if (toolDefinitions && Object.keys(toolDefinitions).length > 0) {
             convertedTools = {};
             for (const [name, def] of Object.entries(toolDefinitions as Record<string, any>)) {
@@ -150,8 +157,8 @@ export async function POST(req: Request) {
             }
             // console.log("🔧 Converted tools:", JSON.stringify(convertedTools, null, 2));
         }
-        console.log("🚀 Calling streamText with model:", model);
-        console.log("🤖 Provider:", provider);
+        console.log(`🚀 Calling streamText with model: ${model}`);
+        console.log(`🤖 Provider: ${provider}`);
         console.log("📨 Incoming messages (raw):", JSON.stringify(messages, null, 2));
 
         // CRITICAL FIX: BlockNote sends messages with 'parts' not 'content'
@@ -242,6 +249,10 @@ export async function POST(req: Request) {
             //     tools: convertedTools,
             //     toolChoice: "auto"
             // }),
+            onError: ({ error }: { error: any }) => {
+                console.error(`❌ Stream error: ${error.message || error}`);
+                if (error.stack) console.error(error.stack);
+            },
         });
 
         console.log("✅ streamText result created");
@@ -249,7 +260,8 @@ export async function POST(req: Request) {
         // Return plain text stream
         return result.toTextStreamResponse();
     } catch (error: any) {
-        console.error("❌ Error in AI route:", error);
+        console.error(`❌ Error in AI route: ${error.message}`);
+        if (error.stack) console.error(error.stack);
 
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
