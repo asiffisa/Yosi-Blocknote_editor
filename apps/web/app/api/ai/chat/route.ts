@@ -148,23 +148,22 @@ export async function POST(req: Request) {
             return obj;
         }
 
-        // DISABLE TOOLS: BlockNote's tool execution is client-side, but we're streaming from server
-        // The AI will generate plain text instead of tool calls
+        // Enable Tools for BlockNote
         let convertedTools: any = undefined;
-        /*
         if (toolDefinitions && Object.keys(toolDefinitions).length > 0) {
             console.log("✅ Processing tools for BlockNote");
             convertedTools = {};
             for (const [name, def] of Object.entries(toolDefinitions as Record<string, any>)) {
-                // Use z.any() to accept any parameters - this prevents schema validation errors
+                // Sanitize the schema using cleanSchema
+                const parameters = def.parameters ? cleanSchema(def.parameters) : z.object({});
+
                 convertedTools[name] = {
                     description: def.description || `Execute ${name}`,
-                    parameters: z.any(),
+                    parameters: jsonSchema(parameters),
                 };
                 console.log(`  📋 Tool: ${name}`);
             }
         }
-        */
 
         // CRITICAL FIX: BlockNote sends messages with 'parts' not 'content'
         // We need to convert parts to content FIRST
@@ -217,26 +216,8 @@ export async function POST(req: Request) {
         }));
 
         // FIX: Extract and inject document state
-        // Note: We need to import these dynamically or ensure they are available
-        // Since we can't easily import from @blocknote/xl-ai/server without verifying it exists,
-        // we will try to use it if available, or skip if not.
-        // For now, we'll assume the user has the package as per the issue description.
-
         let messagesWithContext = convertedMessages;
         try {
-            // We need to check if we can import this. 
-            // If not, we'll proceed without it, but the plan says we should use it.
-            // Let's try to import it at the top level in the next step if this fails, 
-            // but for now we will just implement the logic assuming imports are present.
-            // Wait, I need to add the imports first.
-
-            // The imports are missing in the current file content I'm replacing.
-            // I will add them in a separate step or assume they are added.
-            // Actually, I should add them now.
-
-            // Re-reading the plan: "Inject document state into messages."
-            // The issue description says: import { aiDocumentFormats, injectDocumentStateMessages } from "@blocknote/xl-ai/server";
-
             const documentState = messages?.[messages.length - 1]?.metadata?.documentState;
             if (documentState) {
                 const { injectDocumentStateMessages } = require("@blocknote/xl-ai/server");
@@ -264,6 +245,7 @@ export async function POST(req: Request) {
         const result = await streamText({
             model: modelInstance!,
             messages: messagesWithContext,
+            tools: convertedTools,
             onError: ({ error }: { error: any }) => {
                 console.error(`❌ Stream error: ${error.message || error}`);
                 if (error.stack) console.error(error.stack);

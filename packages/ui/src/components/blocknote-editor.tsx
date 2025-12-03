@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
@@ -45,37 +45,42 @@ export function BlockNoteEditor({
     const [error, setError] = useState<Error | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Keep reference to transport to inject editor later
+    const transport = useMemo(() => {
+        return new VercelV5ChatTransport({
+            api: "/api/ai/chat",
+            headers: async () => {
+                return {
+                    "Content-Type": "application/json",
+                };
+            },
+            getExtraBody: async () => {
+                const settings = getAISettings();
+
+                // Check if API key is configured
+                if (!settings?.apiKey) {
+                    throw new Error(
+                        "API key not configured. Please click the settings button (⚙️) to add your API key."
+                    );
+                }
+
+                return {
+                    userApiKey: settings.apiKey,
+                    provider: settings.provider,
+                    model: settings.model,
+                };
+            },
+        });
+    }, []);
+
     // Create AI extension - using VercelV5ChatTransport
     const aiExtension = useMemo(() => {
         return createAIExtension({
-            transport: new VercelV5ChatTransport({
-                api: "/api/ai/chat",
-                headers: async () => {
-                    return {
-                        "Content-Type": "application/json",
-                    };
-                },
-                getExtraBody: async () => {
-                    const settings = getAISettings();
-
-                    // Check if API key is configured
-                    if (!settings?.apiKey) {
-                        throw new Error(
-                            "API key not configured. Please click the settings button (⚙️) to add your API key."
-                        );
-                    }
-
-                    return {
-                        userApiKey: settings.apiKey,
-                        provider: settings.provider,
-                        model: settings.model,
-                    };
-                },
-            }),
+            transport: transport,
             // @ts-ignore
             stream: true,
         });
-    }, []);
+    }, [transport]);
 
     // Create the BlockNote editor instance
     let editor;
@@ -108,6 +113,13 @@ export function BlockNoteEditor({
         setError(err instanceof Error ? err : new Error("Failed to create editor"));
         setIsLoading(false);
     }
+
+    // Inject editor into transport when available
+    useEffect(() => {
+        if (editor && transport) {
+            transport.setEditor(editor);
+        }
+    }, [editor, transport]);
 
     // Show loading state
     if (isLoading && !editor) {
