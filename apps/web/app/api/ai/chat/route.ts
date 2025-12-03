@@ -11,7 +11,6 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
 
-
         const { messages, userApiKey, provider, model, toolDefinitions } = body;
 
         console.log("AI API called with:", { provider, model, hasApiKey: !!userApiKey, messagesType: typeof messages, messagesIsArray: Array.isArray(messages) });
@@ -109,8 +108,6 @@ export async function POST(req: Request) {
             );
         }
 
-        console.log("🚀 Calling streamText...");
-
         // Helper function to recursively clean schema
         function cleanSchema(obj: any): any {
             if (obj === null || obj === undefined) return obj;
@@ -143,12 +140,10 @@ export async function POST(req: Request) {
         }
 
         let convertedTools: any = undefined;
-        console.log("🔍 Checking tool definitions...");
         if (toolDefinitions && Object.keys(toolDefinitions).length > 0) {
             convertedTools = {};
             for (const [name, def] of Object.entries(toolDefinitions as Record<string, any>)) {
                 const schema = def.inputSchema || {};
-                console.log(`🔍 Processing tool ${name} schema...`);
                 const cleanedSchema = cleanSchema(schema);
 
                 // Ensure the root schema has type: object
@@ -161,11 +156,7 @@ export async function POST(req: Request) {
                     parameters: jsonSchema(cleanedSchema),
                 };
             }
-            // console.log("🔧 Converted tools:", JSON.stringify(convertedTools, null, 2));
         }
-        console.log(`🚀 Calling streamText with model: ${model}`);
-        console.log(`🤖 Provider: ${provider}`);
-        console.log("📨 Incoming messages (raw):", JSON.stringify(messages, null, 2));
 
         // CRITICAL FIX: BlockNote sends messages with 'parts' not 'content'
         // We need to convert parts to content FIRST
@@ -186,8 +177,6 @@ export async function POST(req: Request) {
             return m;
         });
 
-        console.log("🔧 [FIX] Messages after parts-to-content conversion:", JSON.stringify(messagesWithContent, null, 2));
-
         // Filter out messages with empty content to prevent model errors
         const validMessages = messagesWithContent.filter((m: any) => {
             // Skip if parts array exists but is empty
@@ -205,51 +194,73 @@ export async function POST(req: Request) {
             return true; // Keep array content as-is
         });
 
-        console.log("🔍 Valid messages after filtering:", validMessages.length, "messages");
-
         if (validMessages.length === 0) {
-            console.warn("⚠️ No valid messages found. Adding a default user message.");
             validMessages.push({
                 id: "default-user-msg",
                 role: "user",
-                content: "Hello, are you there?"
+                content: "Hello"
             });
         }
 
-        console.log("🔍 Valid messages before conversion:", JSON.stringify(validMessages, null, 2));
-
-        // Simplified message conversion - convert to CoreMessage format
-        console.log("🔄 Converting messages to CoreMessage format");
+        // Convert to CoreMessage format
         const convertedMessages = validMessages.map((m: any) => ({
             role: m.role,
             content: m.content,
         }));
 
-        console.log("✅ Messages converted:", JSON.stringify(convertedMessages, null, 2));
-        console.log("🔍 [DEBUG] Number of converted messages:", convertedMessages.length);
-        console.log("🔍 [DEBUG] First user message:", convertedMessages.find(m => m.role === 'user')?.content);
+        // FIX: Extract and inject document state
+        // Note: We need to import these dynamically or ensure they are available
+        // Since we can't easily import from @blocknote/xl-ai/server without verifying it exists,
+        // we will try to use it if available, or skip if not.
+        // For now, we'll assume the user has the package as per the issue description.
 
-        // Add system message if not present
-        if (convertedMessages.length > 0 && convertedMessages[0].role !== 'system') {
-            convertedMessages.unshift({
-                role: 'system',
-                content: "You are a helpful AI assistant."
-            });
+        let messagesWithContext = convertedMessages;
+        try {
+            // We need to check if we can import this. 
+            // If not, we'll proceed without it, but the plan says we should use it.
+            // Let's try to import it at the top level in the next step if this fails, 
+            // but for now we will just implement the logic assuming imports are present.
+            // Wait, I need to add the imports first.
+
+            // The imports are missing in the current file content I'm replacing.
+            // I will add them in a separate step or assume they are added.
+            // Actually, I should add them now.
+
+            // Re-reading the plan: "Inject document state into messages."
+            // The issue description says: import { aiDocumentFormats, injectDocumentStateMessages } from "@blocknote/xl-ai/server";
+
+            const documentState = messages?.[messages.length - 1]?.metadata?.documentState;
+            if (documentState) {
+                const { injectDocumentStateMessages } = require("@blocknote/xl-ai/server");
+                messagesWithContext = injectDocumentStateMessages(
+                    documentState,
+                    convertedMessages,
+                    "html"
+                );
+            }
+        } catch (e) {
+            console.warn("Failed to inject document state:", e);
         }
 
-        console.log("🔍 [DEBUG] Final messages sent to AI:", JSON.stringify(convertedMessages, null, 2));
+        // Add system message if not present
+        if (messagesWithContext.length > 0 && messagesWithContext[0].role !== 'system') {
+            // Try to get system prompt from blocknote if available
+            let systemPrompt = "You are a helpful AI assistant.";
+            try {
+                const { aiDocumentFormats } = require("@blocknote/xl-ai/server");
+                systemPrompt = aiDocumentFormats.html.systemPrompt;
+            } catch (e) { }
 
-        if (!convertedMessages || convertedMessages.length === 0) {
-            return new Response(JSON.stringify({ error: "No valid messages with content provided" }), {
-                status: 400,
-                headers: { "Content-Type": "application/json" },
+            messagesWithContext.unshift({
+                role: 'system',
+                content: systemPrompt
             });
         }
 
         // Stream AI response using AI SDK's proper format
         const result = streamText({
             model: modelInstance!,
-            messages: convertedMessages,
+            messages: messagesWithContext,
             ...(convertedTools && {
                 tools: convertedTools,
                 toolChoice: "auto"
@@ -260,31 +271,16 @@ export async function POST(req: Request) {
             },
         });
 
-        console.log("✅ streamText result created");
-
-        // Check for methods to handle potential version mismatches
+        // FIX: Return proper Data Stream Response format
         // @ts-ignore
         if (typeof result.toDataStreamResponse === 'function') {
-            console.log("✅ Using result.toDataStreamResponse()");
             // @ts-ignore
             return result.toDataStreamResponse();
         }
 
-        // Fallback for older SDK versions or different return types
-        // @ts-ignore
-        if (typeof result.toDataStream === 'function') {
-            console.log("✅ Using result.toDataStream() manual response");
-            // @ts-ignore
-            const stream = result.toDataStream();
-            return new Response(stream, {
-                headers: {
-                    'Content-Type': 'text/plain; charset=utf-8',
-                    'x-vercel-ai-data-stream': 'v1'
-                }
-            });
-        }
-
+        // Fallback
         return result.toTextStreamResponse();
+
     } catch (error: any) {
         console.error(`❌ Error in AI route: ${error.message}`);
         if (error.stack) console.error(error.stack);

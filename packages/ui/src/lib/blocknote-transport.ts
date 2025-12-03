@@ -5,6 +5,13 @@ import type { ChatTransport } from 'ai';
  * This transport decodes the "Data Stream Protocol" (e.g. 0:"text", 9:{tool})
  * and yields UIMessageChunk objects with accumulated text to BlockNote.
  */
+import type { ChatTransport } from 'ai';
+
+/**
+ * Custom ChatTransport for Vercel AI SDK v5 compatibility.
+ * This transport decodes the "Data Stream Protocol" (e.g. 0:"text", 9:{tool})
+ * and yields UIMessageChunk objects with accumulated text to BlockNote.
+ */
 export class VercelV5ChatTransport implements ChatTransport<any> {
     private api: string;
     private headers?: () => Promise<Record<string, string>>;
@@ -64,7 +71,7 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
     }
 
     /**
-     * Parse Vercel Data Stream Protocol and yield UIMessageChunks
+     * Parse Vercel Data Stream Protocol and yield UIMessageChunks via ReadableStream
      */
     private parseDataStream(stream: ReadableStream<Uint8Array>): ReadableStream<any> {
         const reader = stream.getReader();
@@ -75,7 +82,7 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
 
         return new ReadableStream({
             async start() {
-                //
+                // Initial setup if needed
             },
 
             async pull(controller) {
@@ -92,14 +99,12 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
                     }
 
                     const chunkStr = decoder.decode(value, { stream: true });
-                    console.log('VercelV5ChatTransport: Received chunk:', JSON.stringify(chunkStr));
+                    console.log('VercelV5ChatTransport: Received chunk raw:', JSON.stringify(chunkStr));
                     buffer += chunkStr;
 
                     // Split by newline, but keep the last part in buffer if it's incomplete
                     const lines = buffer.split('\n');
-
-                    // If the last character was a newline, the last element is empty string.
-                    // If not, the last element is the incomplete line.
+                    console.log(`VercelV5ChatTransport: Buffer has ${lines.length} lines`);
                     buffer = lines.pop() || '';
 
                     for (const line of lines) {
@@ -109,28 +114,32 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
                     function processBuffer(line: string) {
                         if (!line.trim()) return;
 
-                        // Try to detect protocol format
                         const separatorIndex = line.indexOf(':');
-
                         if (separatorIndex !== -1) {
                             const type = line.slice(0, separatorIndex);
                             const content = line.slice(separatorIndex + 1);
 
                             if (type === '0') { // Text Delta
                                 try {
-                                    const textDelta = JSON.parse(content);
-                                    if (typeof textDelta === 'string') {
+                                    const value = JSON.parse(content);
+                                    let textDelta = "";
+
+                                    if (typeof value === 'string') {
+                                        textDelta = value;
+                                    } else if (typeof value === 'object' && value !== null && value.text) {
+                                        textDelta = value.text;
+                                    }
+
+                                    if (textDelta) {
                                         fullText += textDelta;
 
-                                        // Construct the chunk object expected by BlockNote (UIMessage)
-                                        // BlockNote expects content to be an array of parts with type 'text'
                                         const textPart = {
                                             type: 'text' as const,
                                             text: fullText
                                         };
 
                                         const chunk = {
-                                            type: 'text', // Add type to prevent crash in isDataUIMessageChunk
+                                            type: 'text',
                                             id: messageId,
                                             createdAt: new Date(),
                                             role: 'assistant' as const,
@@ -143,8 +152,9 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
                                 } catch (e) {
                                     // Ignore parse errors
                                 }
+                            } else if (type === '3') { // Error
+                                console.error("❌ Stream error from server:", content);
                             }
-                            // Ignore other types (tool calls, etc.) for now as we just want text streaming to work first
                         }
                     }
 

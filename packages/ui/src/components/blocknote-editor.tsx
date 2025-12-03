@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
@@ -46,32 +46,36 @@ export function BlockNoteEditor({
     const [isLoading, setIsLoading] = useState(true);
 
     // Create AI extension - using VercelV5ChatTransport
-    const aiExtension = createAIExtension({
-        transport: new VercelV5ChatTransport({
-            api: "/api/ai/chat",
-            headers: async () => {
-                return {
-                    "Content-Type": "application/json",
-                };
-            },
-            getExtraBody: async () => {
-                const settings = getAISettings();
+    const aiExtension = useMemo(() => {
+        return createAIExtension({
+            transport: new VercelV5ChatTransport({
+                api: "/api/ai/chat",
+                headers: async () => {
+                    return {
+                        "Content-Type": "application/json",
+                    };
+                },
+                getExtraBody: async () => {
+                    const settings = getAISettings();
 
-                // Check if API key is configured
-                if (!settings?.apiKey) {
-                    throw new Error(
-                        "API key not configured. Please click the settings button (⚙️) to add your API key."
-                    );
-                }
+                    // Check if API key is configured
+                    if (!settings?.apiKey) {
+                        throw new Error(
+                            "API key not configured. Please click the settings button (⚙️) to add your API key."
+                        );
+                    }
 
-                return {
-                    userApiKey: settings.apiKey,
-                    provider: settings.provider,
-                    model: settings.model,
-                };
-            },
-        }),
-    });
+                    return {
+                        userApiKey: settings.apiKey,
+                        provider: settings.provider,
+                        model: settings.model,
+                    };
+                },
+            }),
+            // @ts-ignore
+            stream: true,
+        });
+    }, []);
 
     // Create the BlockNote editor instance
     let editor;
