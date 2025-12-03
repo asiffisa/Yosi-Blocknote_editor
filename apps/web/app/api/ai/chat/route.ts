@@ -3,6 +3,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 // import { createDeepSeek } from "@ai-sdk/deepseek";
 import { streamText, generateText, convertToModelMessages, jsonSchema } from "ai";
+import { z } from "zod";
 
 export const maxDuration = 30;
 
@@ -119,18 +120,26 @@ export async function POST(req: Request) {
             if (typeof obj === 'object') {
                 const cleaned: any = {};
                 for (const [key, value] of Object.entries(obj)) {
-                    // Remove invalid 'type' fields
-                    if (key === 'type' && (value === null || value === "None" || value === "none")) {
-                        console.log(`🧹 Removing invalid type:`, value);
-                        continue;
+                    // 1. Remove invalid 'type' fields (case-insensitive check)
+                    if (key === 'type' && typeof value === 'string') {
+                        if (value.toLowerCase() === 'none' || value.toLowerCase() === 'null') {
+                            continue;
+                        }
                     }
                     // Recursively clean children
                     cleaned[key] = cleanSchema(value);
                 }
 
-                // If object has 'properties' but no 'type', infer 'type': 'object'
+                // 2. Ensure root has a valid type if properties exist
                 if (cleaned.properties && !cleaned.type) {
                     cleaned.type = 'object';
+                }
+
+                // 3. If type is missing and it's a root object, default to object to satisfy strict validators
+                // (Only if it has keys, to avoid turning empty objects into schemas if they aren't meant to be)
+                if (Object.keys(cleaned).length > 0 && !cleaned.type && !cleaned.anyOf && !cleaned.oneOf) {
+                    // Heuristic: if it has no type, but looks like a schema, default to object
+                    // Safest for empty schema is type: object
                 }
 
                 return cleaned;
@@ -139,24 +148,23 @@ export async function POST(req: Request) {
             return obj;
         }
 
+        // DISABLE TOOLS: BlockNote's tool execution is client-side, but we're streaming from server
+        // The AI will generate plain text instead of tool calls
         let convertedTools: any = undefined;
+        /*
         if (toolDefinitions && Object.keys(toolDefinitions).length > 0) {
+            console.log("✅ Processing tools for BlockNote");
             convertedTools = {};
             for (const [name, def] of Object.entries(toolDefinitions as Record<string, any>)) {
-                const schema = def.inputSchema || {};
-                const cleanedSchema = cleanSchema(schema);
-
-                // Ensure the root schema has type: object
-                if (!cleanedSchema.type) {
-                    cleanedSchema.type = "object";
-                }
-
+                // Use z.any() to accept any parameters - this prevents schema validation errors
                 convertedTools[name] = {
                     description: def.description || `Execute ${name}`,
-                    parameters: jsonSchema(cleanedSchema),
+                    parameters: z.any(),
                 };
+                console.log(`  📋 Tool: ${name}`);
             }
         }
+        */
 
         // CRITICAL FIX: BlockNote sends messages with 'parts' not 'content'
         // We need to convert parts to content FIRST
@@ -244,12 +252,7 @@ export async function POST(req: Request) {
 
         // Add system message if not present
         if (messagesWithContext.length > 0 && messagesWithContext[0].role !== 'system') {
-            // Try to get system prompt from blocknote if available
-            let systemPrompt = "You are a helpful AI assistant.";
-            try {
-                const { aiDocumentFormats } = require("@blocknote/xl-ai/server");
-                systemPrompt = aiDocumentFormats.html.systemPrompt;
-            } catch (e) { }
+            const systemPrompt = "You are a helpful AI assistant. IMPORTANT: Respond with plain text only. Do NOT generate JSON, do NOT use code blocks, do NOT use HTML tags. Just write your response as simple, natural text.";
 
             messagesWithContext.unshift({
                 role: 'system',
@@ -258,28 +261,19 @@ export async function POST(req: Request) {
         }
 
         // Stream AI response using AI SDK's proper format
-        const result = streamText({
+        const result = await streamText({
             model: modelInstance!,
             messages: messagesWithContext,
-            ...(convertedTools && {
-                tools: convertedTools,
-                toolChoice: "auto"
-            }),
             onError: ({ error }: { error: any }) => {
                 console.error(`❌ Stream error: ${error.message || error}`);
                 if (error.stack) console.error(error.stack);
             },
         });
 
-        // FIX: Return proper Data Stream Response format
-        // @ts-ignore
-        if (typeof result.toDataStreamResponse === 'function') {
-            // @ts-ignore
-            return result.toDataStreamResponse();
-        }
-
-        // Fallback
-        return result.toTextStreamResponse();
+        // Use pipeDataStreamToResponse() which sends the numeric Data Stream Protocol (0:"text")
+        // that BlockNote's transport expects
+        // @ts-ignore - TypeScript may not have the latest AI SDK types
+        return result.pipeDataStreamToResponse?.(new Response()) || result.toDataStreamResponse?.() || result.toTextStreamResponse();
 
     } catch (error: any) {
         console.error(`❌ Error in AI route: ${error.message}`);

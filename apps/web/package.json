@@ -14,6 +14,7 @@
         "@ai-sdk/openai": "^2.0.74",
         "@blocknote/core": "0.42.3",
         "@blocknote/mantine": "0.42.3",
+        "@blocknote/xl-ai": "^0.42.3",
         "@radix-ui/react-slot": "^1.0.2",
         "@supabase/supabase-js": "^2.39.7",
         "@yosi/ui": "workspace:*",

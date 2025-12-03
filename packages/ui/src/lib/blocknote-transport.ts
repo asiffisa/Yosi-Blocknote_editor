@@ -1,17 +1,13 @@
-import type { ChatTransport } from 'ai';
-
 /**
- * Custom ChatTransport for Vercel AI SDK v5 compatibility.
- * This transport decodes the "Data Stream Protocol" (e.g. 0:"text", 9:{tool})
- * and yields UIMessageChunk objects with accumulated text to BlockNote.
+ * Custom ChatTransport for BlockNote AI integration.
+ * Implements both stream() and sendMessages() methods for compatibility.
  */
-import type { ChatTransport } from 'ai';
 
-/**
- * Custom ChatTransport for Vercel AI SDK v5 compatibility.
- * This transport decodes the "Data Stream Protocol" (e.g. 0:"text", 9:{tool})
- * and yields UIMessageChunk objects with accumulated text to BlockNote.
- */
+interface ChatTransport<T> {
+    stream(messages: T[], options?: any): AsyncGenerator<string, void, unknown>;
+    sendMessages?(options: any): Promise<ReadableStream<any>>;
+}
+
 export class VercelV5ChatTransport implements ChatTransport<any> {
     private api: string;
     private headers?: () => Promise<Record<string, string>>;
@@ -27,18 +23,15 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
         this.getExtraBody = options.getExtraBody;
     }
 
-    async sendMessages(options: any): Promise<ReadableStream<any>> {
-        const { messages, body } = options;
-        console.log('🚀 VercelV5ChatTransport.sendMessages called!');
+    /**
+     * Stream method required by BlockNote's ChatTransport interface.
+     * Yields text chunks as they arrive from the AI API.
+     */
+    async *stream(messages: any[], _options?: any): AsyncGenerator<string, void, unknown> {
+        console.log('🚀 VercelV5ChatTransport.stream called!');
 
         const extraBody = this.getExtraBody ? await this.getExtraBody() : {};
         const headers = this.headers ? await this.headers() : {};
-
-        const requestBody = {
-            ...extraBody,
-            ...(body || {}),
-            messages,
-        };
 
         const response = await fetch(this.api, {
             method: 'POST',
@@ -46,125 +39,108 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
                 'Content-Type': 'application/json',
                 ...headers,
             },
-            body: JSON.stringify(requestBody),
+            body: JSON.stringify({
+                ...extraBody,
+                messages,
+            }),
         });
 
         if (!response.ok) {
-            let errorMessage = `API error: ${response.status}`;
-            try {
-                const errorBody = await response.text();
-                console.error('❌ Server error:', errorBody);
-                errorMessage = `${errorMessage} - ${errorBody}`;
-            } catch (e) {
-                // ignore
-            }
-            throw new Error(errorMessage);
+            const errorText = await response.text();
+            console.error('❌ API error:', errorText);
+            throw new Error(`API error: ${response.status} - ${errorText}`);
         }
 
-        if (!response.body) throw new Error('No response body');
+        if (!response.body) {
+            throw new Error('No response body');
+        }
 
-        return this.parseDataStream(response.body);
-    }
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
 
-    async reconnectToStream(): Promise<any> {
-        return null;
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) {
+                    console.log('✅ Stream completed');
+                    break;
+                }
+
+                const chunk = decoder.decode(value, { stream: true });
+
+                if (chunk) {
+                    console.log('📝 Yielding chunk:', chunk.substring(0, 50) + (chunk.length > 50 ? '...' : ''));
+                    // Yield plain text directly to BlockNote
+                    yield chunk;
+                }
+            }
+        } finally {
+            reader.releaseLock();
+        }
     }
 
     /**
-     * Parse Vercel Data Stream Protocol and yield UIMessageChunks via ReadableStream
+     * Alternative method that some BlockNote versions call.
+     * Returns a ReadableStream of UIMessageChunk objects.
      */
-    private parseDataStream(stream: ReadableStream<Uint8Array>): ReadableStream<any> {
-        const reader = stream.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        let fullText = ''; // Accumulate text to match BlockNote expectation
+    async sendMessages(options: any): Promise<ReadableStream<any>> {
+        console.log('🚀 VercelV5ChatTransport.sendMessages called!');
+
+        const { messages } = options;
+        const generator = this.stream(messages, options);
         const messageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        let fullText = '';
 
+        // Convert AsyncGenerator to ReadableStream of UIMessageChunk objects
         return new ReadableStream({
-            async start() {
-                // Initial setup if needed
-            },
-
             async pull(controller) {
                 try {
-                    const { done, value } = await reader.read();
+                    const { done, value } = await generator.next();
 
                     if (done) {
-                        console.log('VercelV5ChatTransport: Stream done');
-                        if (buffer.trim()) {
-                            processBuffer(buffer);
-                        }
                         controller.close();
                         return;
                     }
 
-                    const chunkStr = decoder.decode(value, { stream: true });
-                    console.log('VercelV5ChatTransport: Received chunk raw:', JSON.stringify(chunkStr));
-                    buffer += chunkStr;
+                    // Accumulate text
+                    fullText += value;
 
-                    // Split by newline, but keep the last part in buffer if it's incomplete
-                    const lines = buffer.split('\n');
-                    console.log(`VercelV5ChatTransport: Buffer has ${lines.length} lines`);
-                    buffer = lines.pop() || '';
-
-                    for (const line of lines) {
-                        processBuffer(line);
-                    }
-
-                    function processBuffer(line: string) {
-                        if (!line.trim()) return;
-
-                        const separatorIndex = line.indexOf(':');
-                        if (separatorIndex !== -1) {
-                            const type = line.slice(0, separatorIndex);
-                            const content = line.slice(separatorIndex + 1);
-
-                            if (type === '0') { // Text Delta
-                                try {
-                                    const value = JSON.parse(content);
-                                    let textDelta = "";
-
-                                    if (typeof value === 'string') {
-                                        textDelta = value;
-                                    } else if (typeof value === 'object' && value !== null && value.text) {
-                                        textDelta = value.text;
-                                    }
-
-                                    if (textDelta) {
-                                        fullText += textDelta;
-
-                                        const textPart = {
-                                            type: 'text' as const,
-                                            text: fullText
-                                        };
-
-                                        const chunk = {
-                                            type: 'text',
-                                            id: messageId,
-                                            createdAt: new Date(),
-                                            role: 'assistant' as const,
-                                            content: [textPart],
-                                            parts: [textPart],
-                                        };
-
-                                        controller.enqueue(chunk);
-                                    }
-                                } catch (e) {
-                                    // Ignore parse errors
-                                }
-                            } else if (type === '3') { // Error
-                                console.error("❌ Stream error from server:", content);
+                    // Create UIMessageChunk object that BlockNote expects
+                    const chunk = {
+                        type: 'text',
+                        id: messageId,
+                        createdAt: new Date(),
+                        role: 'assistant' as const,
+                        content: [
+                            {
+                                type: 'text' as const,
+                                text: fullText
                             }
-                        }
-                    }
+                        ],
+                        parts: [
+                            {
+                                type: 'text' as const,
+                                text: fullText
+                            }
+                        ]
+                    };
 
+                    console.log('📤 Enqueueing chunk:', {
+                        type: chunk.type,
+                        textLength: fullText.length,
+                        textPreview: fullText.substring(0, 50) + '...'
+                    });
+
+                    controller.enqueue(chunk);
                 } catch (error) {
+                    console.error('❌ sendMessages error:', error);
                     controller.error(error);
                 }
             },
 
             cancel() {
-                reader.cancel();
+                generator.return(undefined);
             }
         });
     }
