@@ -29,8 +29,8 @@ interface ModelOptions {
 
 const MODEL_OPTIONS: ModelOptions = {
     deepseek: [
-        { value: "deepseek-chat", label: "DeepSeek-V2 Chat" },
-        { value: "deepseek-coder", label: "DeepSeek-V2 Coder" },
+        { value: "deepseek-chat", label: "DeepSeek-V3" },
+        { value: "deepseek-reasoner", label: "DeepSeek-Reasoning" },
     ],
     openai: [
         { value: "gpt-4o", label: "GPT-4o" },
