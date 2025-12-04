@@ -4,6 +4,7 @@ import { BlockNoteEditor } from "@yosi/ui";
 import { useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Sun, Moon } from "lucide-react";
+import { ApiKeyDialog } from "@/app/components/api-key-dialog";
 
 export function Canvas() {
     const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -21,8 +22,12 @@ export function Canvas() {
                     : 'url("/Yosi_BG_light.webp")',
             }}
         >
-            {/* Theme Toggle Button */}
-            <div style={{ position: 'fixed', top: '2rem', right: '2rem', zIndex: 10000 }}>
+            {/* Top Right Controls */}
+            <div style={{ position: 'fixed', top: '2rem', right: '2rem', zIndex: 10000, display: 'flex', gap: '0.75rem' }}>
+                {/* AI Settings Dialog */}
+                <ApiKeyDialog />
+
+                {/* Theme Toggle Button */}
                 <Button
                     onClick={toggleTheme}
                     variant="outline"
