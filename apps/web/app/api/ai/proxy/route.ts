@@ -49,7 +49,11 @@ export async function POST(req: NextRequest) {
         });
 
         // Set the proper authorization header for the LLM provider
-        headers.set("Authorization", `Bearer ${apiKey}`);
+        if (provider === "google") {
+            headers.set("x-goog-api-key", apiKey);
+        } else {
+            headers.set("Authorization", `Bearer ${apiKey}`);
+        }
         headers.set("Content-Type", "application/json");
 
         // Make the request to the LLM provider

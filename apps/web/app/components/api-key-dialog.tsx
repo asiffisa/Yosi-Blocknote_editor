@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/app/components/ui/button";
 import { Settings } from "lucide-react";
 
-type Provider = "deepseek" | "openai";
+type Provider = "deepseek" | "openai" | "google";
 
 interface ModelOptions {
     [key: string]: { value: string; label: string }[];
@@ -29,14 +29,27 @@ interface ModelOptions {
 
 const MODEL_OPTIONS: ModelOptions = {
     deepseek: [
-        { value: "deepseek-chat", label: "DeepSeek Chat" },
-        { value: "deepseek-coder", label: "DeepSeek Coder" },
+        { value: "deepseek-chat", label: "DeepSeek-V2 Chat" },
+        { value: "deepseek-coder", label: "DeepSeek-V2 Coder" },
     ],
     openai: [
-        { value: "gpt-4", label: "GPT-4" },
+        { value: "gpt-4o", label: "GPT-4o" },
         { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+        { value: "gpt-4", label: "GPT-4" },
         { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
     ],
+    google: [
+        { value: "gemini-1.5-pro-latest", label: "Gemini 1.5 Pro (Latest)" },
+        { value: "gemini-1.5-flash-latest", label: "Gemini 1.5 Flash (Latest)" },
+        { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Fixed)" },
+        { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Fixed)" },
+    ],
+};
+
+const LOCAL_STORAGE_KEYS = {
+    PROVIDER: "yosi_ai_provider",
+    MODEL: "yosi_ai_model",
+    API_KEY: "yosi_ai_api_key",
 };
 
 export function ApiKeyDialog() {
@@ -45,15 +58,20 @@ export function ApiKeyDialog() {
     const [model, setModel] = useState("deepseek-chat");
     const [apiKey, setApiKey] = useState("");
 
-    // Load settings from localStorage on mount
+    // Load settings from localStorage on mount, ensuring consistency
     useEffect(() => {
         if (typeof window !== "undefined") {
-            const savedProvider = localStorage.getItem("yosi_ai_provider") as Provider;
-            const savedModel = localStorage.getItem("yosi_ai_model");
-            const savedApiKey = localStorage.getItem("yosi_ai_api_key");
+            const savedProvider = localStorage.getItem(LOCAL_STORAGE_KEYS.PROVIDER) as Provider | null;
+            const savedModel = localStorage.getItem(LOCAL_STORAGE_KEYS.MODEL);
+            const savedApiKey = localStorage.getItem(LOCAL_STORAGE_KEYS.API_KEY);
 
-            if (savedProvider) setProvider(savedProvider);
-            if (savedModel) setModel(savedModel);
+            const initialProvider = savedProvider && MODEL_OPTIONS[savedProvider] ? savedProvider : "deepseek";
+            setProvider(initialProvider);
+
+            const providerModels = MODEL_OPTIONS[initialProvider].map(m => m.value);
+            const initialModel = savedModel && providerModels.includes(savedModel) ? savedModel : providerModels[0];
+            setModel(initialModel);
+
             if (savedApiKey) setApiKey(savedApiKey);
         }
     }, []);
@@ -68,9 +86,9 @@ export function ApiKeyDialog() {
 
     const handleSave = () => {
         if (typeof window !== "undefined") {
-            localStorage.setItem("yosi_ai_provider", provider);
-            localStorage.setItem("yosi_ai_model", model);
-            localStorage.setItem("yosi_ai_api_key", apiKey);
+            localStorage.setItem(LOCAL_STORAGE_KEYS.PROVIDER, provider);
+            localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL, model);
+            localStorage.setItem(LOCAL_STORAGE_KEYS.API_KEY, apiKey);
 
             // Notify other components that settings have changed
             window.dispatchEvent(new Event("yosi_ai_config_updated"));
@@ -109,6 +127,7 @@ export function ApiKeyDialog() {
                             <SelectContent>
                                 <SelectItem value="deepseek">DeepSeek</SelectItem>
                                 <SelectItem value="openai">OpenAI</SelectItem>
+                                <SelectItem value="google">Google</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

@@ -1,10 +1,10 @@
-
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { ClientSideTransport } from "@blocknote/xl-ai";
 
 export interface YosiTransportConfig {
     apiKey: string;
-    provider: "deepseek" | "openai";
+    provider: "deepseek" | "openai" | "google";
     model: string;
 }
 
@@ -38,19 +38,28 @@ export function createYosiTransport(config: YosiTransportConfig) {
     console.log(`[YosiTransport] Creating transport for ${config.provider} with model ${config.model}`);
     console.log(`[YosiTransport] API Key present: ${config.apiKey ? "Yes" : "No"}`);
 
-    // Use OpenAI-compatible provider for both DeepSeek and OpenAI
-    // This ensures consistent behavior and proper proxy handling
-    const provider = createOpenAICompatible({
-        name: config.provider,
-        baseURL: config.provider === "deepseek"
-            ? "https://api.deepseek.com/v1"
-            : "https://api.openai.com/v1",
-        fetch: createProxyFetch(config),
-        apiKey: "provided-via-proxy",
-    });
+    let model;
 
-    const model = provider.chatModel(config.model);
+    if (config.provider === "google") {
+        const google = createGoogleGenerativeAI({
+            fetch: createProxyFetch(config),
+            apiKey: "provided-via-proxy", // Placeholder, actual key added by proxy
+        });
+        model = google(config.model);
+    } else {
+        // Use OpenAI-compatible provider for both DeepSeek and OpenAI
+        // This ensures consistent behavior and proper proxy handling
+        const provider = createOpenAICompatible({
+            name: config.provider,
+            baseURL: config.provider === "deepseek"
+                ? "https://api.deepseek.com/v1"
+                : "https://api.openai.com/v1",
+            fetch: createProxyFetch(config),
+            apiKey: "provided-via-proxy",
+        });
+
+        model = provider.chatModel(config.model);
+    }
 
     return new ClientSideTransport({ model });
 }
-
