@@ -74,21 +74,9 @@ function CustomAIMenu() {
                 if (aiResponseStatus === "user-input") {
                     // When text is selected (via formatting toolbar)
                     if (editor.getSelection()) {
-                        const customItems = getCustomAIMenuItems(editor);
-                        // Combine all items
-                        const allItems = [...defaultItems, ...customItems];
-
-                        // Deduplicate based on title (BlockNote uses title as React key)
-                        const seenTitles = new Set<string>();
-                        const uniqueItems = allItems.filter(item => {
-                            if (seenTitles.has(item.title)) {
-                                return false;
-                            }
-                            seenTitles.add(item.title);
-                            return true;
-                        });
-
-                        return uniqueItems;
+                        // Use ONLY custom items to match the requested design exactly
+                        // This replaces the default inconsistent list with our curated, icon-rich list
+                        return getCustomAIMenuItems(editor);
                     }
                 }
                 return defaultItems;

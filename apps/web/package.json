@@ -33,6 +33,7 @@
         "@types/react": "^18.2.57",
         "@types/react-dom": "^18.2.19",
         "autoprefixer": "^10.4.17",
+        "baseline-browser-mapping": "^2.9.2",
         "eslint": "^8.56.0",
         "eslint-config-next": "16.0.5",
         "postcss": "^8.4.35",

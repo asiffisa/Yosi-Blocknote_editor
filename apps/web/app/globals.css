@@ -85,6 +85,14 @@
     --bn-border-radius: 20px;
 }
 
+/* Enforce corner radius for modals */
+.bn-formatting-toolbar,
+.bn-suggestion-menu,
+.bn-combobox-items,
+.bn-menu-dropdown {
+    border-radius: 20px !important;
+}
+
 /* Smooth theme transitions */
 * {
     transition-property: background-color, border-color, color;
@@ -121,4 +129,56 @@
 
 .animate-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 
+ * Custom AI Menu Styles 
+ * Targeting BlockNote's internal classes to match specific design requirements
+ */
+
+/* 
+ * Custom AI Menu Styles 
+ * Targeting BlockNote's internal classes to match specific design requirements
+ */
+
+/* AI Menu Parent Container - Constrain to viewport with scrolling */
+.bn-combobox {
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: 440px !important;
+    /* Leave space for content above and 20px at bottom */
+    overflow: hidden !important;
+}
+
+/* Menu Container - The list of items */
+#ai-suggestion-menu.bn-combobox-items {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    /* Allow flex child to shrink */
+    overflow-y: auto !important;
+    scrollbar-width: thin;
+    overscroll-behavior: contain;
+}
+
+/* AI Input Field - Corner Radius */
+.bn-combobox-input {
+    border-radius: 8px !important;
+}
+
+/* Menu Item Hover & Selected Radius */
+.bn-menu-item:hover,
+.bn-menu-item[data-hovered],
+.bn-menu-item[aria-selected="true"],
+.bn-suggestion-menu-item:hover,
+.bn-suggestion-menu-item[data-hovered],
+.bn-suggestion-menu-item[aria-selected="true"] {
+    border-radius: 16px !important;
+}
+
+/* Formatting Toolbar Padding */
+.bn-formatting-toolbar {
+    padding-right: 8px !important;
+    padding-left: 8px !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
 }
