@@ -6,7 +6,7 @@
 interface ChatTransport<T> {
     stream(messages: T[], options?: any): AsyncGenerator<string, void, unknown>;
     sendMessages?(options: any): Promise<ReadableStream<any>>;
-    reconnectToStream?(options: any): Promise<ReadableStream<any>>;
+    reconnectToStream?(options: any): Promise<any>;
 }
 
 export class VercelV5ChatTransport implements ChatTransport<any> {
@@ -27,6 +27,7 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
     /**
      * Stream method required by BlockNote's ChatTransport interface.
      * Yields text chunks as they arrive from the AI API.
+     * API returns plain text stream (toTextStreamResponse).
      */
     async *stream(messages: any[], _options?: any): AsyncGenerator<string, void, unknown> {
         console.log('🚀 VercelV5ChatTransport.stream called!');
@@ -68,12 +69,11 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
                     break;
                 }
 
-                const chunk = decoder.decode(value, { stream: true });
-
-                if (chunk) {
-                    console.log('📝 Yielding chunk:', chunk.substring(0, 50) + (chunk.length > 50 ? '...' : ''));
-                    // Yield plain text directly to BlockNote
-                    yield chunk;
+                // toTextStreamResponse returns plain text chunks
+                const text = decoder.decode(value, { stream: true });
+                if (text) {
+                    console.log('📝 Yielding text:', text.substring(0, 30) + (text.length > 30 ? '...' : ''));
+                    yield text;
                 }
             }
         } finally {
@@ -82,24 +82,28 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
     }
 
     /**
-     * Alternative method that some BlockNote versions call.
-     * Returns a ReadableStream of UIMessageChunk objects.
+     * sendMessages is called by BlockNote's AI extension.
+     * Returns a ReadableStream that BlockNote pipes through processUIMessageStream.
      */
     async sendMessages(options: any): Promise<ReadableStream<any>> {
         console.log('🚀 VercelV5ChatTransport.sendMessages called!');
 
         const { messages } = options;
-        const generator = this.stream(messages, options);
         const messageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        const generator = this.stream(messages, options);
         let fullText = '';
+        let closed = false;
 
-        // Convert AsyncGenerator to ReadableStream of UIMessageChunk objects
+        // Return a ReadableStream that yields UIMessageChunk objects
         return new ReadableStream({
             async pull(controller) {
+                if (closed) return;
+
                 try {
                     const { done, value } = await generator.next();
 
                     if (done) {
+                        closed = true;
                         controller.close();
                         return;
                     }
@@ -108,8 +112,9 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
                     fullText += value;
 
                     // Create UIMessageChunk object that BlockNote expects
+                    // BlockNote's isDataUIMessageChunk checks chunk.type.startsWith()
                     const chunk = {
-                        type: 'text',
+                        type: 'message' as const,
                         id: messageId,
                         createdAt: new Date(),
                         role: 'assistant' as const,
@@ -119,28 +124,26 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
                                 text: fullText
                             }
                         ],
-                        parts: [
-                            {
-                                type: 'text' as const,
-                                text: fullText
-                            }
-                        ]
                     };
 
-                    console.log('📤 Enqueueing chunk:', {
-                        type: chunk.type,
+                    console.log('📤 Enqueueing UIMessageChunk:', {
                         textLength: fullText.length,
-                        textPreview: fullText.substring(0, 50) + '...'
+                        textPreview: fullText.substring(0, 50) + (fullText.length > 50 ? '...' : '')
                     });
 
-                    controller.enqueue(chunk);
+                    if (!closed) {
+                        controller.enqueue(chunk);
+                    }
                 } catch (error) {
-                    console.error('❌ sendMessages error:', error);
-                    controller.error(error);
+                    if (!closed) {
+                        console.error('❌ sendMessages error:', error);
+                        controller.error(error);
+                    }
                 }
             },
 
             cancel() {
+                closed = true;
                 generator.return(undefined);
             }
         });

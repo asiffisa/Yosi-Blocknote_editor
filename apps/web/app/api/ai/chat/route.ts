@@ -143,8 +143,8 @@ export async function POST(req: Request) {
             },
         });
 
-        // Return UI message stream format that BlockNote expects
-        return result.toUIMessageStreamResponse();
+        // Return plain text stream - simpler than UIMessageStream
+        return result.toTextStreamResponse();
     } catch (error: any) {
         console.error(`❌ Error in AI route: ${error.message}`);
         if (error.stack) console.error(error.stack);
