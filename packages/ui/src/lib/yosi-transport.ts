@@ -1,4 +1,4 @@
-import { createOpenAI } from "@ai-sdk/openai";
+
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { ClientSideTransport } from "@blocknote/xl-ai";
 
@@ -38,25 +38,18 @@ export function createYosiTransport(config: YosiTransportConfig) {
     console.log(`[YosiTransport] Creating transport for ${config.provider} with model ${config.model}`);
     console.log(`[YosiTransport] API Key present: ${config.apiKey ? "Yes" : "No"}`);
 
-    let model;
+    // Use OpenAI-compatible provider for both DeepSeek and OpenAI
+    // This ensures consistent behavior and proper proxy handling
+    const provider = createOpenAICompatible({
+        name: config.provider,
+        baseURL: config.provider === "deepseek"
+            ? "https://api.deepseek.com/v1"
+            : "https://api.openai.com/v1",
+        fetch: createProxyFetch(config),
+        apiKey: "provided-via-proxy",
+    });
 
-    if (config.provider === "deepseek") {
-        // Use OpenAI-compatible provider for DeepSeek (uses /chat/completions endpoint)
-        const deepseek = createOpenAICompatible({
-            name: "deepseek",
-            baseURL: "https://api.deepseek.com/v1",
-            fetch: createProxyFetch(config),
-            apiKey: "provided-via-proxy",
-        });
-        model = deepseek.chatModel(config.model);
-    } else {
-        // Use native OpenAI provider
-        model = createOpenAI({
-            fetch: createProxyFetch(config),
-            baseURL: "https://api.openai.com/v1",
-            apiKey: "provided-via-proxy",
-        })(config.model);
-    }
+    const model = provider.chatModel(config.model);
 
     return new ClientSideTransport({ model });
 }
