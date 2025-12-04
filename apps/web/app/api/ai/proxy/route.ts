@@ -30,10 +30,15 @@ export async function POST(req: NextRequest) {
         }
 
         console.log(`[AI Proxy] ✓ Proxying to ${provider} | API Key: ${apiKey.slice(0, 8)}...${apiKey.slice(-4)}`);
-        console.log(`[AI Proxy] ✓ Target URL: ${url}`);
+        console.log(`[AI Proxy] ✓ Target URL (encoded): ${url}`);
+
+        // Decode the URL for logging
+        const decodedUrl = decodeURIComponent(url);
+        console.log(`[AI Proxy] ✓ Target URL (decoded): ${decodedUrl}`);
 
         // Clone the request body
         const body = await req.text();
+        console.log(`[AI Proxy] ✓ Request body preview: ${body.slice(0, 200)}...`);
 
         // Copy all headers except host
         const headers = new Headers();
@@ -48,7 +53,7 @@ export async function POST(req: NextRequest) {
         headers.set("Content-Type", "application/json");
 
         // Make the request to the LLM provider
-        const response = await fetch(url, {
+        const response = await fetch(decodedUrl, {
             method: "POST",
             headers,
             body,
