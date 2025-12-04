@@ -1,9 +1,12 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-// import { createDeepSeek } from "@ai-sdk/deepseek";
-import { streamText, generateText, convertToModelMessages, jsonSchema } from "ai";
-import { z } from "zod";
+import { streamText, convertToModelMessages } from "ai";
+import {
+    aiDocumentFormats,
+    injectDocumentStateMessages,
+    toolDefinitionsToToolSet,
+} from "@blocknote/xl-ai/server";
 
 export const maxDuration = 30;
 
@@ -14,7 +17,13 @@ export async function POST(req: Request) {
 
         const { messages, userApiKey, provider, model, toolDefinitions } = body;
 
-        console.log("AI API called with:", { provider, model, hasApiKey: !!userApiKey, messagesType: typeof messages, messagesIsArray: Array.isArray(messages) });
+        console.log("AI API called with:", {
+            provider,
+            model,
+            hasApiKey: !!userApiKey,
+            hasToolDefinitions: !!toolDefinitions,
+            toolCount: toolDefinitions ? Object.keys(toolDefinitions).length : 0,
+        });
 
         // Validate inputs
         if (!userApiKey || !provider) {
@@ -74,8 +83,6 @@ export async function POST(req: Request) {
 
                 case "deepseek":
                     console.log("🔵 Initializing DeepSeek provider");
-
-                    // DeepSeek is compatible with OpenAI SDK
                     const deepseek = createOpenAI({
                         baseURL: "https://api.deepseek.com",
                         apiKey: userApiKey?.trim(),
@@ -100,7 +107,7 @@ export async function POST(req: Request) {
             console.error("Model creation error:", modelError);
             return new Response(
                 JSON.stringify({
-                    error: `Failed to create model: ${modelError.message}`
+                    error: `Failed to create model: ${modelError.message}`,
                 }),
                 {
                     status: 500,
@@ -109,172 +116,35 @@ export async function POST(req: Request) {
             );
         }
 
-        // Helper function to recursively clean schema
-        function cleanSchema(obj: any): any {
-            if (obj === null || obj === undefined) return obj;
+        // Convert tools using BlockNote's helper
+        const tools = toolDefinitions
+            ? toolDefinitionsToToolSet(toolDefinitions)
+            : undefined;
 
-            if (Array.isArray(obj)) {
-                return obj.map(cleanSchema);
-            }
+        console.log("✅ Tools converted:", tools ? Object.keys(tools) : "none");
 
-            if (typeof obj === 'object') {
-                const cleaned: any = {};
-                for (const [key, value] of Object.entries(obj)) {
-                    // 1. Remove invalid 'type' fields (case-insensitive check)
-                    if (key === 'type' && typeof value === 'string') {
-                        if (value.toLowerCase() === 'none' || value.toLowerCase() === 'null') {
-                            continue;
-                        }
-                    }
-                    // Recursively clean children
-                    cleaned[key] = cleanSchema(value);
-                }
+        // Inject document state and convert messages using BlockNote helpers
+        const processedMessages = convertToModelMessages(
+            injectDocumentStateMessages(messages)
+        );
 
-                // 2. Ensure root has a valid type if properties exist
-                if (cleaned.properties && !cleaned.type) {
-                    cleaned.type = 'object';
-                }
+        console.log("✅ Messages processed, count:", processedMessages.length);
 
-                // 3. If type is missing and it's a root object, default to object to satisfy strict validators
-                // (Only if it has keys, to avoid turning empty objects into schemas if they aren't meant to be)
-                if (Object.keys(cleaned).length > 0 && !cleaned.type && !cleaned.anyOf && !cleaned.oneOf) {
-                    // Heuristic: if it has no type, but looks like a schema, default to object
-                    // Safest for empty schema is type: object
-                }
-
-                return cleaned;
-            }
-
-            return obj;
-        }
-
-        // DISABLE TOOLS: BlockNote's tool execution is client-side, but we're streaming from server
-        // The AI will generate plain text instead of tool calls
-        let convertedTools: any = undefined;
-        /*
-        if (toolDefinitions && Object.keys(toolDefinitions).length > 0) {
-            console.log("✅ Processing tools for BlockNote");
-            convertedTools = {};
-            for (const [name, def] of Object.entries(toolDefinitions as Record<string, any>)) {
-                // Use z.any() to accept any parameters - this prevents schema validation errors
-                convertedTools[name] = {
-                    description: def.description || `Execute ${name}`,
-                    parameters: z.any(),
-                };
-                console.log(`  📋 Tool: ${name}`);
-            }
-        }
-        */
-
-        // CRITICAL FIX: BlockNote sends messages with 'parts' not 'content'
-        // We need to convert parts to content FIRST
-        const messagesWithContent = (messages || []).map((m: any) => {
-            // If message has parts but no content, extract content from parts
-            if (m.parts && Array.isArray(m.parts) && m.parts.length > 0 && !m.content) {
-                // Extract text from all parts
-                const textParts = m.parts
-                    .filter((p: any) => p.type === 'text' && p.text)
-                    .map((p: any) => p.text);
-
-                // Join all text parts into single content string
-                return {
-                    ...m,
-                    content: textParts.join('\n'),
-                };
-            }
-            return m;
-        });
-
-        // Filter out messages with empty content to prevent model errors
-        const validMessages = messagesWithContent.filter((m: any) => {
-            // Skip if parts array exists but is empty
-            if (m.parts && Array.isArray(m.parts) && m.parts.length === 0) {
-                return false;
-            }
-
-            // Keep message if it has non-empty content
-            if (!m.content) return false;
-
-            if (typeof m.content === 'string') {
-                return m.content.trim().length > 0;
-            }
-
-            return true; // Keep array content as-is
-        });
-
-        if (validMessages.length === 0) {
-            validMessages.push({
-                id: "default-user-msg",
-                role: "user",
-                content: "Hello"
-            });
-        }
-
-        // Convert to CoreMessage format
-        const convertedMessages = validMessages.map((m: any) => ({
-            role: m.role,
-            content: m.content,
-        }));
-
-        // FIX: Extract and inject document state
-        // Note: We need to import these dynamically or ensure they are available
-        // Since we can't easily import from @blocknote/xl-ai/server without verifying it exists,
-        // we will try to use it if available, or skip if not.
-        // For now, we'll assume the user has the package as per the issue description.
-
-        let messagesWithContext = convertedMessages;
-        try {
-            // We need to check if we can import this. 
-            // If not, we'll proceed without it, but the plan says we should use it.
-            // Let's try to import it at the top level in the next step if this fails, 
-            // but for now we will just implement the logic assuming imports are present.
-            // Wait, I need to add the imports first.
-
-            // The imports are missing in the current file content I'm replacing.
-            // I will add them in a separate step or assume they are added.
-            // Actually, I should add them now.
-
-            // Re-reading the plan: "Inject document state into messages."
-            // The issue description says: import { aiDocumentFormats, injectDocumentStateMessages } from "@blocknote/xl-ai/server";
-
-            const documentState = messages?.[messages.length - 1]?.metadata?.documentState;
-            if (documentState) {
-                const { injectDocumentStateMessages } = require("@blocknote/xl-ai/server");
-                messagesWithContext = injectDocumentStateMessages(
-                    documentState,
-                    convertedMessages,
-                    "html"
-                );
-            }
-        } catch (e) {
-            console.warn("Failed to inject document state:", e);
-        }
-
-        // Add system message if not present
-        if (messagesWithContext.length > 0 && messagesWithContext[0].role !== 'system') {
-            const systemPrompt = "You are a helpful AI assistant. IMPORTANT: Respond with plain text only. Do NOT generate JSON, do NOT use code blocks, do NOT use HTML tags. Just write your response as simple, natural text.";
-
-            messagesWithContext.unshift({
-                role: 'system',
-                content: systemPrompt
-            });
-        }
-
-        // Stream AI response using AI SDK's proper format
-        const result = await streamText({
+        // Stream AI response with BlockNote's system prompt and tools
+        const result = streamText({
             model: modelInstance!,
-            messages: messagesWithContext,
+            system: aiDocumentFormats.html.systemPrompt,
+            messages: processedMessages,
+            tools,
+            toolChoice: tools ? "required" : undefined,
             onError: ({ error }: { error: any }) => {
                 console.error(`❌ Stream error: ${error.message || error}`);
                 if (error.stack) console.error(error.stack);
             },
         });
 
-        // Use pipeDataStreamToResponse() which sends the numeric Data Stream Protocol (0:"text")
-        // that BlockNote's transport expects
-        // @ts-ignore - TypeScript may not have the latest AI SDK types
-        return result.pipeDataStreamToResponse?.(new Response()) || result.toDataStreamResponse?.() || result.toTextStreamResponse();
-
+        // Return UI message stream format that BlockNote expects
+        return result.toUIMessageStreamResponse();
     } catch (error: any) {
         console.error(`❌ Error in AI route: ${error.message}`);
         if (error.stack) console.error(error.stack);

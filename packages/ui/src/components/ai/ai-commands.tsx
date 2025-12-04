@@ -3,7 +3,7 @@
 import { BlockNoteEditor } from "@blocknote/core";
 import {
     type AIMenuSuggestionItem,
-    getAIExtension,
+    AIExtension,
     aiDocumentFormats,
 } from "@blocknote/xl-ai";
 import {
@@ -31,7 +31,7 @@ export const improveWriting = (
     aliases: ["improve", "enhance", "better"],
     icon: <Sparkles size={18} />,
     onItemClick: async () => {
-        await getAIExtension(editor).invokeAI({
+        await editor.getExtension(AIExtension)?.invokeAI({
             userPrompt: "Improve the clarity, flow, and overall quality of this text",
             useSelection: true,
             streamToolsProvider: aiDocumentFormats.html.getStreamToolsProvider({
@@ -49,7 +49,7 @@ export const fixGrammar = (editor: BlockNoteEditor): AIMenuSuggestionItem => ({
     aliases: ["grammar", "spelling", "correct", "fix"],
     icon: <CheckCircle size={18} />,
     onItemClick: async () => {
-        await getAIExtension(editor).invokeAI({
+        await editor.getExtension(AIExtension)?.invokeAI({
             userPrompt:
                 "Fix all grammar and spelling errors in this text. Keep the meaning and tone the same.",
             useSelection: true,
@@ -68,7 +68,7 @@ export const makeShorter = (editor: BlockNoteEditor): AIMenuSuggestionItem => ({
     aliases: ["shorter", "condense", "brief", "summarize"],
     icon: <Minimize2 size={18} />,
     onItemClick: async () => {
-        await getAIExtension(editor).invokeAI({
+        await editor.getExtension(AIExtension)?.invokeAI({
             userPrompt:
                 "Condense this text to be more concise while keeping the key points",
             useSelection: true,
@@ -87,7 +87,7 @@ export const makeLonger = (editor: BlockNoteEditor): AIMenuSuggestionItem => ({
     aliases: ["longer", "expand", "elaborate", "detailed"],
     icon: <Maximize2 size={18} />,
     onItemClick: async () => {
-        await getAIExtension(editor).invokeAI({
+        await editor.getExtension(AIExtension)?.invokeAI({
             userPrompt: "Expand this text with more details and examples",
             useSelection: true,
             streamToolsProvider: aiDocumentFormats.html.getStreamToolsProvider({
@@ -107,7 +107,7 @@ export const changeToneProfessional = (
     aliases: ["professional", "formal", "business"],
     icon: <MessageSquare size={18} />,
     onItemClick: async () => {
-        await getAIExtension(editor).invokeAI({
+        await editor.getExtension(AIExtension)?.invokeAI({
             userPrompt:
                 "Rewrite this text with a professional and formal tone, suitable for business communication",
             useSelection: true,
@@ -128,7 +128,7 @@ export const changeToneCasual = (
     aliases: ["casual", "informal", "friendly"],
     icon: <MessageSquare size={18} />,
     onItemClick: async () => {
-        await getAIExtension(editor).invokeAI({
+        await editor.getExtension(AIExtension)?.invokeAI({
             userPrompt:
                 "Rewrite this text with a casual and friendly tone, as if talking to a friend",
             useSelection: true,
@@ -149,7 +149,7 @@ export const continueWriting = (
     aliases: ["continue", "complete", "finish"],
     icon: <PenLine size={18} />,
     onItemClick: async () => {
-        await getAIExtension(editor).invokeAI({
+        await editor.getExtension(AIExtension)?.invokeAI({
             userPrompt:
                 "Continue writing from where this text ends. Maintain the same style and tone.",
             useSelection: false, // Use full document context
@@ -168,7 +168,7 @@ export const simplify = (editor: BlockNoteEditor): AIMenuSuggestionItem => ({
     aliases: ["simplify", "simple", "easy", "clear"],
     icon: <Lightbulb size={18} />,
     onItemClick: async () => {
-        await getAIExtension(editor).invokeAI({
+        await editor.getExtension(AIExtension)?.invokeAI({
             userPrompt:
                 "Rewrite this text to be simpler and easier to understand. Use plain language.",
             useSelection: true,
@@ -187,7 +187,7 @@ export const paraphrase = (editor: BlockNoteEditor): AIMenuSuggestionItem => ({
     aliases: ["paraphrase", "rephrase", "reword"],
     icon: <RefreshCw size={18} />,
     onItemClick: async () => {
-        await getAIExtension(editor).invokeAI({
+        await editor.getExtension(AIExtension)?.invokeAI({
             userPrompt:
                 "Paraphrase this text - reword it while keeping the exact same meaning",
             useSelection: true,
@@ -206,7 +206,7 @@ export const rewrite = (editor: BlockNoteEditor): AIMenuSuggestionItem => ({
     aliases: ["rewrite", "redo", "fresh"],
     icon: <Edit3 size={18} />,
     onItemClick: async () => {
-        await getAIExtension(editor).invokeAI({
+        await editor.getExtension(AIExtension)?.invokeAI({
             userPrompt:
                 "Completely rewrite this text with a fresh perspective while keeping the core message",
             useSelection: true,

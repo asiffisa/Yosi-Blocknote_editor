@@ -1,6 +1,7 @@
 "use client";
 
-import { BlockNoteEditor, filterSuggestionItems } from "@blocknote/core";
+import { BlockNoteEditor } from "@blocknote/core";
+import { filterSuggestionItems } from "@blocknote/core/extensions";
 import {
     FormattingToolbar,
     FormattingToolbarController,

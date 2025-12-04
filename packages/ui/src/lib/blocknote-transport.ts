@@ -6,6 +6,7 @@
 interface ChatTransport<T> {
     stream(messages: T[], options?: any): AsyncGenerator<string, void, unknown>;
     sendMessages?(options: any): Promise<ReadableStream<any>>;
+    reconnectToStream?(options: any): Promise<ReadableStream<any>>;
 }
 
 export class VercelV5ChatTransport implements ChatTransport<any> {
@@ -141,6 +142,20 @@ export class VercelV5ChatTransport implements ChatTransport<any> {
 
             cancel() {
                 generator.return(undefined);
+            }
+        });
+    }
+
+    /**
+     * Reconnect to an existing stream. Required by BlockNote 0.44.0.
+     * Returns an empty stream since we don't support reconnection.
+     */
+    async reconnectToStream(_options: any): Promise<ReadableStream<any>> {
+        console.log('🔄 VercelV5ChatTransport.reconnectToStream called (no-op)');
+        // Return an empty, immediately closing stream as we don't support reconnection
+        return new ReadableStream({
+            start(controller) {
+                controller.close();
             }
         });
     }

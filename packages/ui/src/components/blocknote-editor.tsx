@@ -8,7 +8,7 @@ import "@blocknote/core/fonts/inter.css";
 import "@blocknote/xl-ai/style.css";
 import { en as defaultEn } from "@blocknote/core/locales";
 import { en as aiEn } from "@blocknote/xl-ai/locales";
-import { createAIExtension } from "@blocknote/xl-ai";
+import { AIExtension } from "@blocknote/xl-ai";
 import { VercelV5ChatTransport } from "../lib/blocknote-transport";
 
 import type { BlockNoteEditorProps } from "../types";
@@ -47,7 +47,7 @@ export function BlockNoteEditor({
 
     // Create AI extension - using VercelV5ChatTransport
     const aiExtension = useMemo(() => {
-        return createAIExtension({
+        return AIExtension({
             transport: new VercelV5ChatTransport({
                 api: "/api/ai/chat",
                 headers: async () => {
