@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+// BlockNote CSS - imported here instead of globals.css for Tailwind v4 compatibility
+import "@blocknote/core/fonts/inter.css";
+import "@blocknote/mantine/style.css";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });

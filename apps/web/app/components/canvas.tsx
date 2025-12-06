@@ -1,12 +1,22 @@
 "use client";
 
 import { BlockNoteEditor } from "@yosi/ui";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Sun, Moon } from "lucide-react";
+import { ApiKeyDialog } from "@/app/components/api-key-dialog";
 
 export function Canvas() {
     const [theme, setTheme] = useState<"light" | "dark">("dark");
+
+    // Apply dark class to document root for portaled components (dialogs, etc.)
+    useEffect(() => {
+        if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+        }
+    }, [theme]);
 
     const toggleTheme = () => {
         setTheme(theme === "light" ? "dark" : "light");
@@ -21,8 +31,12 @@ export function Canvas() {
                     : 'url("/Yosi_BG_light.webp")',
             }}
         >
-            {/* Theme Toggle Button */}
-            <div style={{ position: 'fixed', top: '2rem', right: '2rem', zIndex: 10000 }}>
+            {/* Top Right Controls */}
+            <div className="fixed top-8 right-8 z-10000 flex gap-4">
+                {/* AI Settings Dialog */}
+                <ApiKeyDialog />
+
+                {/* Theme Toggle Button */}
                 <Button
                     onClick={toggleTheme}
                     variant="outline"
