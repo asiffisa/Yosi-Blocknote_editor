@@ -56,8 +56,6 @@ export async function POST(req: NextRequest) {
             body,
         });
 
-        console.log(`[AI Proxy] ✓ Response status: ${response.status}`);
-
         // If not OK, return error
         if (!response.ok) {
             const errorText = await response.text();
