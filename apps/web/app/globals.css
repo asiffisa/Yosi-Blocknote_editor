@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap');
 @import 'tailwindcss';
 
 @source '../../../packages/ui/src/**/*.{js,ts,jsx,tsx,mdx}';
@@ -237,4 +238,14 @@
     padding-left: 8px !important;
     padding-top: 4px !important;
     padding-bottom: 4px !important;
+}
+
+/* Placeholder text color in dark mode - override BlockNote CSS variable */
+.dark .bn-editor {
+    --bn-colors-side-menu: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Fallback: directly target the ::before pseudo-element */
+.dark .bn-editor .bn-inline-content:has(> .ProseMirror-trailingBreak)::before {
+    color: rgba(255, 255, 255, 0.1) !important;
 }

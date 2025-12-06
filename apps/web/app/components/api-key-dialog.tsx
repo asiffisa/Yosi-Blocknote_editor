@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/app/components/ui/button";
-import { Settings } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import {
     LOCAL_STORAGE_KEYS,
     AI_CONFIG_EVENT,
@@ -81,17 +81,17 @@ export function ApiKeyDialog() {
                     size="icon"
                     className="rounded-full transition-all hover:scale-110"
                 >
-                    <Settings className="h-4 w-4 dark:text-white" />
+                    <KeyRound className="h-4 w-4 dark:text-white" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]" onOpenAutoFocus={(e) => e.preventDefault()}>
                 <DialogHeader>
                     <DialogTitle>AI Settings</DialogTitle>
                     <DialogDescription>
-                        Configure your AI provider and API key. Your key is stored locally in your browser.
+                        Configure your AI provider and API key.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-8 py-4">
                     {/* Provider Selection */}
                     <div className="grid gap-2">
                         <Label htmlFor="provider">Model Provider</Label>
@@ -136,7 +136,7 @@ export function ApiKeyDialog() {
                         />
                     </div>
                 </div>
-                <div className="flex justify-end gap-3">
+                <div className="flex justify-end gap-6">
                     <Button variant="outline" onClick={() => setOpen(false)}>
                         Cancel
                     </Button>

@@ -16,7 +16,7 @@ import {
     AIMenu,
     getAISlashMenuItems
 } from "@blocknote/xl-ai";
-import { BlockNoteEditor as BlockNoteEditorType } from "@blocknote/core";
+import { BlockNoteEditor as BlockNoteEditorType, BlockNoteSchema, defaultStyleSpecs } from "@blocknote/core";
 import {
     FormattingToolbar,
     FormattingToolbarController,
@@ -24,6 +24,8 @@ import {
     SuggestionMenuController,
     getDefaultReactSlashMenuItems
 } from "@blocknote/react";
+import { FontStyle } from "../lib/font-style";
+import { FontToolbarButton } from "../lib/font-toolbar-button";
 
 import type { BlockNoteEditorProps } from "../types";
 import { EditorErrorFallback } from "./editor-error-boundary";
@@ -53,6 +55,16 @@ const customDictionary = {
         default: "Write, / for commands",
     },
 };
+
+/**
+ * Custom schema with font style support
+ */
+const schema = BlockNoteSchema.create({
+    styleSpecs: {
+        ...defaultStyleSpecs,
+        font: FontStyle,
+    },
+});
 
 /**
  * CustomAIMenu with both default and custom items
@@ -95,6 +107,7 @@ function FormattingToolbarWithAI() {
             formattingToolbar={() => (
                 <FormattingToolbar>
                     {...getFormattingToolbarItems()}
+                    <FontToolbarButton />
                     <AIToolbarButton />
                 </FormattingToolbar>
             )}
@@ -113,9 +126,10 @@ function BlockNoteEditorInner({
     const [error, setError] = useState<Error | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Create the BlockNote editor instance with AI extension
+    // Create the BlockNote editor instance with AI extension and custom schema
     // We always add the extension so the UI shows up, even if the key is invalid initially
     const editor = useCreateBlockNote({
+        schema,
         dictionary: customDictionary,
         initialContent,
         extensions: [
