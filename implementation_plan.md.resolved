@@ -1,0 +1,41 @@
+# Upgrade React and react-resizable-panels
+
+## Goal Description
+Upgrade `react` and `react-resizable-panels` to their latest stable versions to benefit from performance improvements, new features, and bug fixes. Provide a detailed document on these improvements.
+
+## User Review Required
+- [ ] Confirm target versions (React 19 vs 18.x, etc.)
+- [ ] Review potential breaking changes identified during research.
+
+## Research Findings
+- **React**: Latest is **19.2.1**. Key wins: React Compiler, Actions, `use` hook, no `forwardRef`.
+- **react-resizable-panels**: Latest is **3.0.6**. Key wins: Better pixel unit support, robust imperative API.
+- **Next.js**: Current project uses `16.0.5`, which is compatible with React 19.
+
+## Proposed Changes
+### Dependencies
+#### [MODIFY] package.json (apps/web)
+- Update `react` to `^19.2.1`
+- Update `react-dom` to `^19.2.1`
+- Update `react-resizable-panels` to `^3.0.6`
+- Ensure `@types/react` and `@types/react-dom` are updated to match (likely `^19.0.0`).
+
+#### [MODIFY] package.json (apps/extension)
+- Update `react` to `^19.2.1`
+- Update `react-dom` to `^19.2.1`
+- Update devDependencies for `@types/react` and `@types/react-dom`.
+
+### Codebase Updates
+#### [MODIFY] Source Code (if needed)
+- Replace any usages of `forwardRef` if we want to modernize (optional, but good for cleanup).
+- Check `react-resizable-panels` usage:
+    - Verify `PanelGroup` props (check if we need `units` prop).
+    - Update any `ref` usages for panels if API changed significantly (likely backward compatible for basic usage).
+
+## Verification Plan
+### Automated Tests
+- Run build scripts: `npm run build` in both apps.
+- Run any existing tests.
+
+### Manual Verification
+- extensive manual testing of the UI, specifically the resizable panels and general React interactions.
