@@ -84,7 +84,7 @@ export function ApiKeyDialog() {
                     <Settings className="h-4 w-4 dark:text-white" />
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px]" onOpenAutoFocus={(e) => e.preventDefault()}>
                 <DialogHeader>
                     <DialogTitle>AI Settings</DialogTitle>
                     <DialogDescription>
