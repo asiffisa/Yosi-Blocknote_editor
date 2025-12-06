@@ -20,37 +20,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/app/components/ui/button";
 import { Settings } from "lucide-react";
-
-type Provider = "deepseek" | "openai" | "google";
-
-interface ModelOptions {
-    [key: string]: { value: string; label: string }[];
-}
-
-const MODEL_OPTIONS: ModelOptions = {
-    deepseek: [
-        { value: "deepseek-chat", label: "DeepSeek-V3" },
-        { value: "deepseek-reasoner", label: "DeepSeek-Reasoning" },
-    ],
-    openai: [
-        { value: "gpt-4o", label: "GPT-4o" },
-        { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
-        { value: "gpt-4", label: "GPT-4" },
-        { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
-    ],
-    google: [
-        { value: "gemini-1.5-pro-latest", label: "Gemini 1.5 Pro (Latest)" },
-        { value: "gemini-1.5-flash-latest", label: "Gemini 1.5 Flash (Latest)" },
-        { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Fixed)" },
-        { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Fixed)" },
-    ],
-};
-
-const LOCAL_STORAGE_KEYS = {
-    PROVIDER: "yosi_ai_provider",
-    MODEL: "yosi_ai_model",
-    API_KEY: "yosi_ai_api_key",
-};
+import {
+    LOCAL_STORAGE_KEYS,
+    AI_CONFIG_EVENT,
+    MODEL_OPTIONS,
+    type Provider,
+} from "@yosi/ui";
 
 export function ApiKeyDialog() {
     const [open, setOpen] = useState(false);
@@ -91,7 +66,7 @@ export function ApiKeyDialog() {
             localStorage.setItem(LOCAL_STORAGE_KEYS.API_KEY, apiKey);
 
             // Notify other components that settings have changed
-            window.dispatchEvent(new Event("yosi_ai_config_updated"));
+            window.dispatchEvent(new Event(AI_CONFIG_EVENT));
         }
         setOpen(false);
     };

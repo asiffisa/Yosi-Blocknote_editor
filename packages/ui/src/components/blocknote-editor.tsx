@@ -30,6 +30,7 @@ import { EditorErrorFallback } from "./editor-error-boundary";
 import { EditorLoading } from "./editor-loading";
 import { createYosiTransport } from "../lib/yosi-transport";
 import { getCustomAIMenuItems } from "../lib/custom-ai-commands";
+import { useAIConfig } from "../lib/use-ai-config";
 
 /**
  * Utility to filter suggestion items based on query
@@ -107,7 +108,7 @@ function FormattingToolbarWithAI() {
 function BlockNoteEditorInner({
     aiConfig,
     ...props
-}: BlockNoteEditorProps & { aiConfig: { apiKey: string; provider: "deepseek" | "openai"; model: string } }) {
+}: BlockNoteEditorProps & { aiConfig: { apiKey: string; provider: "deepseek" | "openai" | "google"; model: string } }) {
     const { theme, className, style, initialContent, onChange, onEditorReady, editable } = props;
     const [error, setError] = useState<Error | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -196,39 +197,7 @@ function SuggestionMenuWithAI(props: { editor: BlockNoteEditorType<any, any, any
  * Wrapper component that handles AI configuration loading and updates
  */
 export function BlockNoteEditor(props: BlockNoteEditorProps) {
-    const [aiConfig, setAiConfig] = useState<{
-        apiKey: string;
-        provider: "deepseek" | "openai";
-        model: string;
-    }>({
-        apiKey: "",
-        provider: "deepseek",
-        model: "deepseek-chat"
-    });
-    const [configLoaded, setConfigLoaded] = useState(false);
-
-    const loadConfig = () => {
-        if (typeof window !== "undefined") {
-            const apiKey = localStorage.getItem("yosi_ai_api_key") || "";
-            const provider = (localStorage.getItem("yosi_ai_provider") as "deepseek" | "openai") || "deepseek";
-            const model = localStorage.getItem("yosi_ai_model") || "deepseek-chat";
-
-            setAiConfig({ apiKey, provider, model });
-            setConfigLoaded(true);
-        }
-    };
-
-    // Load AI settings on mount and listen for changes
-    useEffect(() => {
-        loadConfig();
-
-        const handleConfigUpdate = () => loadConfig();
-        window.addEventListener("yosi_ai_config_updated", handleConfigUpdate);
-
-        return () => {
-            window.removeEventListener("yosi_ai_config_updated", handleConfigUpdate);
-        };
-    }, []);
+    const { config: aiConfig, loaded: configLoaded } = useAIConfig();
 
     if (!configLoaded) {
         return <EditorLoading />;

@@ -20,25 +20,18 @@ export async function POST(req: NextRequest) {
         const apiKey = req.headers.get("X-API-Key");
 
         if (!url) {
-            console.log("[AI Proxy] ❌ No URL provided");
             return NextResponse.json({ error: "URL is required" }, { status: 400 });
         }
 
         if (!apiKey) {
-            console.log("[AI Proxy] ❌ No API key provided");
             return NextResponse.json({ error: "API key is required" }, { status: 401 });
         }
 
-        console.log(`[AI Proxy] ✓ Proxying to ${provider} | API Key: ${apiKey.slice(0, 8)}...${apiKey.slice(-4)}`);
-        console.log(`[AI Proxy] ✓ Target URL (encoded): ${url}`);
-
-        // Decode the URL for logging
+        // Decode the URL
         const decodedUrl = decodeURIComponent(url);
-        console.log(`[AI Proxy] ✓ Target URL (decoded): ${decodedUrl}`);
 
         // Clone the request body
         const body = await req.text();
-        console.log(`[AI Proxy] ✓ Request body preview: ${body.slice(0, 200)}...`);
 
         // Copy all headers except host
         const headers = new Headers();
@@ -65,10 +58,9 @@ export async function POST(req: NextRequest) {
 
         console.log(`[AI Proxy] ✓ Response status: ${response.status}`);
 
-        // If not OK, log the error
+        // If not OK, return error
         if (!response.ok) {
             const errorText = await response.text();
-            console.log(`[AI Proxy] ❌ Error response: ${errorText}`);
             return new NextResponse(errorText, {
                 status: response.status,
                 headers: { "Content-Type": "application/json" }

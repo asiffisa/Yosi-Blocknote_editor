@@ -38,16 +38,11 @@ export async function POST(req: NextRequest) {
 
         // Validation
         if (!apiKey) {
-            console.log("[AI API] ❌ No API key provided");
             return NextResponse.json(
                 { error: "API key is required. Please configure it in settings." },
                 { status: 401 }
             );
         }
-
-        // Debug: Confirm API key received
-        console.log(`[AI API] ✓ API key received (${apiKey.slice(0, 8)}...${apiKey.slice(-4)})`);
-        console.log(`[AI API] ✓ Provider: ${provider}, Model: ${model}`);
 
         if (!messages || messages.length === 0) {
             return NextResponse.json(

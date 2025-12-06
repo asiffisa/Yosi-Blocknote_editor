@@ -23,7 +23,7 @@ export function Canvas() {
             }}
         >
             {/* Top Right Controls */}
-            <div style={{ position: 'fixed', top: '2rem', right: '2rem', zIndex: 10000, display: 'flex', gap: '0.75rem' }}>
+            <div className="fixed top-8 right-8 z-[10000] flex gap-4">
                 {/* AI Settings Dialog */}
                 <ApiKeyDialog />
 

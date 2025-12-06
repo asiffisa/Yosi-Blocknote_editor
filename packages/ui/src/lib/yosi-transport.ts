@@ -17,8 +17,6 @@ function createProxyFetch(config: YosiTransportConfig): typeof fetch {
         const url = typeof input === 'string' ? input : input.toString();
         const proxyUrl = `/api/ai/proxy?provider=${config.provider}&url=${encodeURIComponent(url)}`;
 
-        console.log(`[YosiTransport] Proxying request to: ${url}`);
-
         return fetch(proxyUrl, {
             ...init,
             headers: {
@@ -35,9 +33,6 @@ function createProxyFetch(config: YosiTransportConfig): typeof fetch {
  * Routes requests through our proxy to securely add API key
  */
 export function createYosiTransport(config: YosiTransportConfig) {
-    console.log(`[YosiTransport] Creating transport for ${config.provider} with model ${config.model}`);
-    console.log(`[YosiTransport] API Key present: ${config.apiKey ? "Yes" : "No"}`);
-
     let model;
 
     if (config.provider === "google") {
