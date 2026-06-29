@@ -22,7 +22,7 @@ describe('useAIConfig', () => {
 
     it('should load config from localStorage', async () => {
         localStorage.setItem(LOCAL_STORAGE_KEYS.PROVIDER, 'openai');
-        localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL, 'gpt-4');
+        localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL, 'gpt-4.1');
         localStorage.setItem(LOCAL_STORAGE_KEYS.API_KEY, 'test-key-123');
 
         const { result } = renderHook(() => useAIConfig());
@@ -32,7 +32,7 @@ describe('useAIConfig', () => {
         });
 
         expect(result.current.config.provider).toBe('openai');
-        expect(result.current.config.model).toBe('gpt-4');
+        expect(result.current.config.model).toBe('gpt-4.1');
         expect(result.current.config.apiKey).toBe('test-key-123');
     });
 
@@ -47,7 +47,7 @@ describe('useAIConfig', () => {
         });
 
         expect(result.current.config.provider).toBe('openai');
-        expect(result.current.config.model).toBe('gpt-4o'); // First OpenAI model
+        expect(result.current.config.model).toBe('gpt-4o-mini'); // First (cheapest) OpenAI model
     });
 
     it('should fallback to default provider if saved provider is invalid', async () => {
@@ -72,7 +72,7 @@ describe('useAIConfig', () => {
         // Update localStorage and dispatch event
         act(() => {
             localStorage.setItem(LOCAL_STORAGE_KEYS.PROVIDER, 'google');
-            localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL, 'gemini-1.5-pro-latest');
+            localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL, 'gemini-2.5-pro');
             localStorage.setItem(LOCAL_STORAGE_KEYS.API_KEY, 'new-key');
             window.dispatchEvent(new Event(AI_CONFIG_EVENT));
         });
@@ -81,7 +81,7 @@ describe('useAIConfig', () => {
             expect(result.current.config.provider).toBe('google');
         });
 
-        expect(result.current.config.model).toBe('gemini-1.5-pro-latest');
+        expect(result.current.config.model).toBe('gemini-2.5-pro');
         expect(result.current.config.apiKey).toBe('new-key');
     });
 });
