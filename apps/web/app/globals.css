@@ -240,9 +240,13 @@
     padding-bottom: 4px !important;
 }
 
-/* Placeholder text color in dark mode - override BlockNote CSS variable */
+/* Dark mode editor overrides */
 .dark .bn-editor {
     --bn-colors-side-menu: rgba(255, 255, 255, 0.15) !important;
+}
+
+.dark .bn-container[data-color-scheme] {
+    --bn-colors-editor-background: #000000 !important;
 }
 
 /* Fallback: directly target the ::before pseudo-element */
