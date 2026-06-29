@@ -247,5 +247,5 @@
 
 /* Fallback: directly target the ::before pseudo-element */
 .dark .bn-editor .bn-inline-content:has(> .ProseMirror-trailingBreak)::before {
-    color: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.15) !important;
 }

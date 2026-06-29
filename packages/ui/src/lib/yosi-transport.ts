@@ -1,6 +1,7 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { ClientSideTransport } from "@blocknote/xl-ai";
+import { applyProviderRequestBody } from "./provider-overrides";
 
 export interface YosiTransportConfig {
     apiKey: string;
@@ -19,6 +20,9 @@ function createProxyFetch(config: YosiTransportConfig): typeof fetch {
 
         return fetch(proxyUrl, {
             ...init,
+            // Apply provider-specific body tweaks (e.g. disable DeepSeek thinking
+            // mode so tool calling works) before forwarding to the proxy.
+            body: applyProviderRequestBody(config.provider, init?.body),
             headers: {
                 ...init?.headers,
                 "X-API-Key": config.apiKey,

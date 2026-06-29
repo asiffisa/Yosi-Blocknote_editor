@@ -3,13 +3,40 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "edge";
 
 /**
+ * Allowlist of upstream hosts this proxy is permitted to forward to.
+ *
+ * SECURITY: Without this check the route is an open proxy — an attacker could
+ * pass any `url` and use the server to reach internal services or cloud
+ * metadata endpoints (SSRF). Only the known LLM provider APIs are allowed, and
+ * only over HTTPS. Keep this in sync with the providers in `SUPPORTED_PROVIDERS`
+ * (packages/ui/src/lib/constants.ts) and the base URLs in yosi-transport.ts.
+ */
+const ALLOWED_HOSTS = new Set<string>([
+    "api.openai.com",
+    "api.deepseek.com",
+    "generativelanguage.googleapis.com",
+]);
+
+function isAllowedTarget(rawUrl: string): URL | null {
+    let parsed: URL;
+    try {
+        parsed = new URL(rawUrl);
+    } catch {
+        return null;
+    }
+    if (parsed.protocol !== "https:") return null;
+    if (!ALLOWED_HOSTS.has(parsed.hostname)) return null;
+    return parsed;
+}
+
+/**
  * AI Proxy Route
- * Routes requests to OpenAI/DeepSeek APIs while adding the API key server-side.
- * This is used with ClientSideTransport's fetchViaProxy pattern.
- * 
+ * Routes requests to OpenAI/DeepSeek/Google APIs while adding the API key
+ * server-side. This is used with ClientSideTransport's fetchViaProxy pattern.
+ *
  * Query params:
- * - provider: "openai" or "deepseek"
- * - url: The target URL to proxy to
+ * - provider: "openai" | "deepseek" | "google"
+ * - url: The target URL to proxy to (must be an allowlisted provider host)
  */
 export async function POST(req: NextRequest) {
     try {
@@ -27,8 +54,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "API key is required" }, { status: 401 });
         }
 
-        // Decode the URL
+        // Decode the URL and reject anything not pointing at an allowed provider.
         const decodedUrl = decodeURIComponent(url);
+        const target = isAllowedTarget(decodedUrl);
+        if (!target) {
+            return NextResponse.json(
+                { error: "Target URL is not allowed" },
+                { status: 403 }
+            );
+        }
 
         // Clone the request body
         const body = await req.text();
@@ -49,8 +83,8 @@ export async function POST(req: NextRequest) {
         }
         headers.set("Content-Type", "application/json");
 
-        // Make the request to the LLM provider
-        const response = await fetch(decodedUrl, {
+        // Make the request to the validated LLM provider URL
+        const response = await fetch(target.toString(), {
             method: "POST",
             headers,
             body,
