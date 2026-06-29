@@ -35,7 +35,7 @@ describe('constants', () => {
     describe('DEFAULT_AI_CONFIG', () => {
         it('should have correct defaults', () => {
             expect(DEFAULT_AI_CONFIG.provider).toBe('deepseek');
-            expect(DEFAULT_AI_CONFIG.model).toBe('deepseek-chat');
+            expect(DEFAULT_AI_CONFIG.model).toBe('deepseek-v4-flash');
             expect(DEFAULT_AI_CONFIG.apiKey).toBe('');
         });
     });
@@ -60,8 +60,8 @@ describe('constants', () => {
             });
         });
 
-        it('should include deepseek-chat as first deepseek option', () => {
-            expect(MODEL_OPTIONS.deepseek[0].value).toBe('deepseek-chat');
+        it('should include deepseek-v4-flash as first deepseek option', () => {
+            expect(MODEL_OPTIONS.deepseek[0].value).toBe('deepseek-v4-flash');
         });
     });
 });

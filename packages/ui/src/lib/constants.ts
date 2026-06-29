@@ -27,7 +27,7 @@ export type Provider = typeof SUPPORTED_PROVIDERS[number];
  */
 export const DEFAULT_AI_CONFIG = {
     provider: "deepseek" as Provider,
-    model: "deepseek-chat",
+    model: "deepseek-v4-flash",
     apiKey: "",
 } as const;
 
@@ -41,24 +41,16 @@ export const DEFAULT_AI_CONFIG = {
  * against each provider's pricing/models page before relying on them.
  */
 export const MODEL_OPTIONS: Record<Provider, { value: string; label: string }[]> = {
-    // https://api-docs.deepseek.com/quick_start/pricing
     deepseek: [
-        { value: "deepseek-chat", label: "DeepSeek-V3 (Chat)" },
-        { value: "deepseek-reasoner", label: "DeepSeek-R1 (Reasoner)" },
+        { value: "deepseek-v4-flash", label: "DeepSeek V4 Flash" },
+        { value: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
     ],
-    // https://platform.openai.com/docs/pricing
     openai: [
-        { value: "gpt-4o-mini", label: "GPT-4o mini (cheapest)" },
-        { value: "gpt-4.1-nano", label: "GPT-4.1 nano" },
-        { value: "gpt-4.1-mini", label: "GPT-4.1 mini" },
-        { value: "gpt-4.1", label: "GPT-4.1" },
-        { value: "gpt-4o", label: "GPT-4o" },
+        { value: "gpt-5.4-mini", label: "GPT-5.4 mini" },
+        { value: "gpt-5-nano", label: "GPT-5 nano" },
     ],
-    // https://ai.google.dev/gemini-api/docs/pricing
     google: [
-        { value: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash-Lite (cheapest)" },
-        { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
-        { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
-        { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+        { value: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
+        { value: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite" },
     ],
 };

@@ -30,7 +30,7 @@ import {
 export function ApiKeyDialog() {
     const [open, setOpen] = useState(false);
     const [provider, setProvider] = useState<Provider>("deepseek");
-    const [model, setModel] = useState("deepseek-chat");
+    const [model, setModel] = useState(MODEL_OPTIONS["deepseek"][0].value);
     const [apiKey, setApiKey] = useState("");
 
     // Load settings from localStorage on mount, ensuring consistency
