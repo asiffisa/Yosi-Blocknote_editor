@@ -10,7 +10,7 @@ and a Plasmo browser extension.
 It's intended as a **starting point** you can fork: the editor, AI integration,
 provider switching, theming, and a hardened API proxy are all in place.
 
-![Yosi editor — Zen writing canvas with AI slash commands](apps/web/public/Yosi_BG_dark.webp)
+![Yosi editor — slash command menu over the dark forest canvas](apps/web/public/screenshot.png)
 
 ---
 
@@ -77,14 +77,14 @@ is ready — type `/` for block commands or select text and use the AI button.
 
 ### Getting an API key
 
-| Provider | Where to get a key                                               | Cheapest model in the picker |
-| -------- | --------------------------------------------------------------- | ---------------------------- |
-| DeepSeek | <https://platform.deepseek.com/>                                | `deepseek-chat`              |
-| OpenAI   | <https://platform.openai.com/api-keys>                          | `gpt-4o-mini`                |
-| Google   | <https://aistudio.google.com/apikey>                            | `gemini-2.0-flash-lite`      |
+| Provider | Where to get a key                        | Models                                        |
+| -------- | ----------------------------------------- | --------------------------------------------- |
+| DeepSeek | <https://platform.deepseek.com/>          | `deepseek-v4-flash` (default), `deepseek-v4-pro` |
+| OpenAI   | <https://platform.openai.com/api-keys>    | `gpt-5.4-mini` (default), `gpt-5-nano`       |
+| Google   | <https://aistudio.google.com/apikey>      | `gemini-3.5-flash` (default), `gemini-3.1-flash-lite` |
 
-Model options live in [`packages/ui/src/lib/constants.ts`](packages/ui/src/lib/constants.ts)
-and are ordered cheapest-first (the first entry becomes the default for a provider).
+Model options live in [`packages/ui/src/lib/constants.ts`](packages/ui/src/lib/constants.ts).
+The first entry per provider is used as the default when you switch providers.
 
 ## Scripts
 
